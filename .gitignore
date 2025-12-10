@@ -4,3 +4,11 @@
 .vscode
 node_modules
 .DS_Store
+
+# Executable files (Linux/Unix)
+*
+!*/
+!*.*
+!Makefile
+!README
+!LICENSE
