@@ -1,0 +1,854 @@
+================================================================================
+                  PHẦN IV: ADVANCED CONCEPTS (Test 3)
+================================================================================
+
+Tài liệu ôn tập chi tiết về các khái niệm nâng cao trong C++
+Format: Khái niệm → Lưu ý → Ví dụ code thực tế → Lỗi thường gặp
+
+================================================================================
+
+MỤC LỤC
+═══════
+
+29. TEMPLATES (FUNCTION & CLASS)
+    29.1. Function templates
+    29.2. Class templates
+    29.3. Template specialization
+    29.4. Non-type template parameters
+    
+30. EXCEPTION HANDLING
+    30.1. try-catch-throw
+    30.2. Exception hierarchy
+    30.3. noexcept
+    30.4. RAII pattern
+    
+31. COPY CONTROL ⭐ RULE OF THREE/FIVE/ZERO
+    31.1. Rule of Three
+    31.2. Deep copy vs Shallow copy
+    31.3. Copy constructor (Test2/on_8.cpp)
+    31.4. Copy assignment operator
+    31.5. Rule of Five (C++11)
+    31.6. Copy-and-swap idiom
+    
+32. STATIC MEMBERS
+    32.1. Static data members
+    32.2. Static member functions
+    32.3. Static local variables (Gki/test2.cpp)
+    32.4. Static với inheritance
+    
+33. FRIEND FUNCTIONS & CLASSES
+    33.1. Friend function
+    33.2. Friend class
+    33.3. Khi nào dùng friend
+
+================================================================================
+
+═══════════════════════════════════════════════════════════════════════════════
+CHAPTER 29: TEMPLATES (FUNCTION & CLASS)
+═══════════════════════════════════════════════════════════════════════════════
+
+29.1. FUNCTION TEMPLATES
+────────────────────────
+
+KHÁI NIỆM:
+Function template cho phép viết function hoạt động với nhiều types.
+
+CÚ PHÁP:
+```cpp
+template<typename T>
+T max(T a, T b) {
+    return (a > b) ? a : b;
+}
+
+int main() {
+    cout << max(10, 20);       // max<int>
+    cout << max(10.5, 20.5);   // max<double>
+    cout << max('a', 'z');     // max<char>
+}
+```
+
+VÍ DỤ ĐẦY ĐỦ:
+```cpp
+template<typename T>
+void swap(T& a, T& b) {
+    T temp = a;
+    a = b;
+    b = temp;
+}
+
+template<typename T>
+void print(const T& value) {
+    cout << value << endl;
+}
+
+template<typename T>
+T add(T a, T b) {
+    return a + b;
+}
+
+int main() {
+    int x = 10, y = 20;
+    swap(x, y);
+    cout << x << " " << y << endl;  // 20 10
+    
+    print(42);
+    print(3.14);
+    print("Hello");
+    
+    cout << add(10, 20) << endl;      // 30
+    cout << add(10.5, 20.5) << endl;  // 31
+}
+```
+
+MULTIPLE TEMPLATE PARAMETERS:
+```cpp
+template<typename T1, typename T2>
+void print(const T1& a, const T2& b) {
+    cout << a << " " << b << endl;
+}
+
+print(10, 3.14);     // int, double
+print("Age:", 25);   // const char*, int
+```
+
+29.2. CLASS TEMPLATES (Template/Vector.h)
+──────────────────────────────────────────
+
+KHÁI NIỆM:
+Class template cho phép tạo class hoạt động với nhiều types.
+
+VÍ DỤ:
+```cpp
+template<typename T>
+class Vector {
+    T* data;
+    int size;
+public:
+    Vector(T value, int s) : size(s) {
+        data = new T[size];
+        for (int i = 0; i < size; i++) {
+            data[i] = value;
+        }
+    }
+    
+    ~Vector() {
+        delete[] data;
+    }
+    
+    void Show() const {
+        for (int i = 0; i < size; i++) {
+            cout << data[i] << " ";
+        }
+        cout << endl;
+    }
+    
+    T& operator[](int index) {
+        return data[index];
+    }
+};
+
+int main() {
+    Vector<int> v1(5, 3);
+    v1.Show();  // 5 5 5
+    
+    Vector<double> v2(3.14, 2);
+    v2.Show();  // 3.14 3.14
+    
+    Vector<string> v3("Hello", 2);
+    v3.Show();  // Hello Hello
+}
+```
+
+VỚI CUSTOM TYPES:
+```cpp
+class Point {
+    int x, y;
+public:
+    Point(int a = 0, int b = 0) : x(a), y(b) {}
+    friend ostream& operator<<(ostream& os, const Point& p) {
+        return os << "(" << p.x << "," << p.y << ")";
+    }
+};
+
+int main() {
+    Vector<Point> v(Point(1, 2), 3);
+    v.Show();  // (1,2) (1,2) (1,2)
+}
+```
+
+29.3. TEMPLATE SPECIALIZATION
+──────────────────────────────
+
+KHÁI NIỆM:
+Định nghĩa riêng cho một type cụ thể.
+
+VÍ DỤ:
+```cpp
+// Generic template
+template<typename T>
+class Container {
+    T value;
+public:
+    Container(T v) : value(v) {}
+    void print() { cout << value << endl; }
+};
+
+// Specialization cho bool
+template<>
+class Container<bool> {
+    bool value;
+public:
+    Container(bool v) : value(v) {}
+    void print() {
+        cout << (value ? "true" : "false") << endl;
+    }
+};
+
+int main() {
+    Container<int> c1(42);
+    c1.print();  // 42
+    
+    Container<bool> c2(true);
+    c2.print();  // true
+}
+```
+
+29.4. NON-TYPE TEMPLATE PARAMETERS
+───────────────────────────────────
+
+VÍ DỤ:
+```cpp
+template<typename T, int SIZE>
+class Array {
+    T data[SIZE];
+public:
+    Array() {
+        for (int i = 0; i < SIZE; i++) {
+            data[i] = T();
+        }
+    }
+    
+    T& operator[](int index) {
+        return data[index];
+    }
+    
+    int size() const { return SIZE; }
+};
+
+int main() {
+    Array<int, 10> arr1;
+    Array<double, 5> arr2;
+    
+    cout << arr1.size() << endl;  // 10
+    cout << arr2.size() << endl;  // 5
+}
+```
+
+═══════════════════════════════════════════════════════════════════════════════
+CHAPTER 30: EXCEPTION HANDLING
+═══════════════════════════════════════════════════════════════════════════════
+
+30.1. TRY-CATCH-THROW
+─────────────────────
+
+CÚ PHÁP:
+```cpp
+try {
+    // Code có thể throw exception
+    throw exception_object;
+} catch (ExceptionType& e) {
+    // Xử lý exception
+}
+```
+
+VÍ DỤ CƠ BẢN:
+```cpp
+#include <iostream>
+#include <stdexcept>
+using namespace std;
+
+double divide(double a, double b) {
+    if (b == 0) {
+        throw runtime_error("Division by zero!");
+    }
+    return a / b;
+}
+
+int main() {
+    try {
+        cout << divide(10, 2) << endl;   // 5
+        cout << divide(10, 0) << endl;   // Throw!
+    } catch (const runtime_error& e) {
+        cout << "Error: " << e.what() << endl;
+    }
+    
+    cout << "Program continues..." << endl;
+}
+
+OUTPUT:
+5
+Error: Division by zero!
+Program continues...
+```
+
+30.2. EXCEPTION HIERARCHY
+─────────────────────────
+
+STD::EXCEPTION HIERARCHY:
+```
+std::exception
+  ├─ logic_error
+  │   ├─ invalid_argument
+  │   ├─ domain_error
+  │   ├─ length_error
+  │   ├─ out_of_range
+  │   └─ future_error
+  └─ runtime_error
+      ├─ range_error
+      ├─ overflow_error
+      └─ underflow_error
+```
+
+VÍ DỤ:
+```cpp
+class Array {
+    int* data;
+    int size;
+public:
+    Array(int s) : size(s) {
+        if (s <= 0) {
+            throw invalid_argument("Size must be positive");
+        }
+        data = new int[size];
+    }
+    
+    ~Array() { delete[] data; }
+    
+    int& operator[](int index) {
+        if (index < 0 || index >= size) {
+            throw out_of_range("Index out of bounds");
+        }
+        return data[index];
+    }
+};
+
+int main() {
+    try {
+        Array arr(10);
+        arr[5] = 42;   // OK
+        arr[20] = 10;  // Throw out_of_range
+    } catch (const invalid_argument& e) {
+        cout << "Invalid argument: " << e.what() << endl;
+    } catch (const out_of_range& e) {
+        cout << "Out of range: " << e.what() << endl;
+    } catch (const exception& e) {
+        cout << "Exception: " << e.what() << endl;
+    }
+}
+```
+
+MULTIPLE CATCH:
+```cpp
+try {
+    // ...
+} catch (const out_of_range& e) {
+    // Specific exception first
+} catch (const logic_error& e) {
+    // More general exception
+} catch (const exception& e) {
+    // Most general
+} catch (...) {
+    // Catch all (không khuyên dùng)
+}
+```
+
+30.3. NOEXCEPT
+──────────────
+
+KHÁI NIỆM:
+Chỉ định function không throw exception.
+
+VÍ DỤ:
+```cpp
+int add(int a, int b) noexcept {
+    return a + b;  // Không throw
+}
+
+int divide(int a, int b) noexcept(false) {
+    if (b == 0) throw runtime_error("Div by zero");
+    return a / b;
+}
+
+// Move constructor nên noexcept
+class MyClass {
+public:
+    MyClass(MyClass&& other) noexcept {
+        // Move without throwing
+    }
+};
+```
+
+30.4. RAII PATTERN
+──────────────────
+
+KHÁI NIỆM:
+Resource Acquisition Is Initialization - Tự động quản lý resources.
+
+VÍ DỤ:
+```cpp
+class FileHandle {
+    FILE* file;
+public:
+    FileHandle(const char* name) {
+        file = fopen(name, "r");
+        if (!file) {
+            throw runtime_error("Cannot open file");
+        }
+    }
+    
+    ~FileHandle() {
+        if (file) {
+            fclose(file);  // ⭐ Tự động close
+        }
+    }
+    
+    // Prevent copy
+    FileHandle(const FileHandle&) = delete;
+    FileHandle& operator=(const FileHandle&) = delete;
+};
+
+int main() {
+    try {
+        FileHandle f("data.txt");
+        // Use file...
+        throw runtime_error("Error!");
+    } catch (...) {
+        // File tự động close trong ~FileHandle()
+    }
+}
+```
+
+═══════════════════════════════════════════════════════════════════════════════
+CHAPTER 31: COPY CONTROL ⭐ RULE OF THREE/FIVE/ZERO
+═══════════════════════════════════════════════════════════════════════════════
+
+31.1. RULE OF THREE
+───────────────────
+
+⭐ QUY TẮC:
+Nếu class cần một trong ba, thì cần CẢ BA:
+1. Destructor
+2. Copy constructor
+3. Copy assignment operator
+
+TẠI SAO?
+- Class quản lý dynamic memory
+- Cần deep copy thay vì shallow copy
+- Tránh double delete
+
+31.2. DEEP COPY VS SHALLOW COPY
+────────────────────────────────
+
+SHALLOW COPY (❌ NGUY HIỂM):
+```cpp
+class Bad {
+    int* data;
+public:
+    Bad(int value) {
+        data = new int(value);
+    }
+    
+    // ❌ Compiler-generated copy constructor (shallow copy)
+    // Bad(const Bad& other) : data(other.data) {}
+    
+    ~Bad() {
+        delete data;  // ❌ DOUBLE DELETE!
+    }
+};
+
+int main() {
+    Bad b1(42);
+    Bad b2 = b1;  // Shallow copy: b2.data = b1.data (same pointer!)
+}  // ❌ CRASH: b2.~Bad() delete data, rồi b1.~Bad() delete data again!
+```
+
+DEEP COPY (✓ ĐÚNG):
+```cpp
+class Good {
+    int* data;
+public:
+    Good(int value) {
+        data = new int(value);
+    }
+    
+    // ✓ Deep copy constructor
+    Good(const Good& other) {
+        data = new int(*other.data);  // ✓ New memory!
+    }
+    
+    // ✓ Copy assignment operator
+    Good& operator=(const Good& other) {
+        if (this != &other) {
+            delete data;  // Delete old
+            data = new int(*other.data);  // Deep copy new
+        }
+        return *this;
+    }
+    
+    ~Good() {
+        delete data;  // ✓ Safe: Each object owns its data
+    }
+};
+```
+
+31.3. VÍ DỤ CODE TỪ TEST (Test2/on_8.cpp)
+──────────────────────────────────────────
+
+```cpp
+class Exam {
+    int prop;
+public:
+    Exam(int = 1);
+    Exam(const Exam&);  // Copy constructor
+    ~Exam();
+    const Exam& operator=(const Exam&);  // Assignment
+};
+
+Exam::Exam(int prop) : prop(prop) {
+    cout << "1";
+}
+
+Exam::Exam(Exam const& obj) : prop(obj.prop) {
+    cout << "2";  // Copy constructor called
+}
+
+Exam::~Exam() {}
+
+const Exam& Exam::operator=(Exam const& obj) {
+    if (this != &obj) {  // ⭐ Self-assignment check
+        this->prop = obj.prop;
+        cout << "3";
+    }
+    return *this;
+}
+```
+
+31.4. RULE OF FIVE (C++11)
+──────────────────────────
+
+THÊM 2 FUNCTIONS:
+4. Move constructor
+5. Move assignment operator
+
+VÍ DỤ:
+```cpp
+class MyString {
+    char* data;
+    int length;
+public:
+    // 1. Destructor
+    ~MyString() {
+        delete[] data;
+    }
+    
+    // 2. Copy constructor
+    MyString(const MyString& other) {
+        length = other.length;
+        data = new char[length + 1];
+        strcpy(data, other.data);
+    }
+    
+    // 3. Copy assignment
+    MyString& operator=(const MyString& other) {
+        if (this != &other) {
+            delete[] data;
+            length = other.length;
+            data = new char[length + 1];
+            strcpy(data, other.data);
+        }
+        return *this;
+    }
+    
+    // 4. Move constructor (C++11)
+    MyString(MyString&& other) noexcept {
+        data = other.data;
+        length = other.length;
+        other.data = nullptr;  // ⭐ Steal resources
+        other.length = 0;
+    }
+    
+    // 5. Move assignment (C++11)
+    MyString& operator=(MyString&& other) noexcept {
+        if (this != &other) {
+            delete[] data;
+            data = other.data;
+            length = other.length;
+            other.data = nullptr;  // ⭐ Steal resources
+            other.length = 0;
+        }
+        return *this;
+    }
+};
+```
+
+31.5. COPY-AND-SWAP IDIOM
+─────────────────────────
+
+ELEGANT SOLUTION:
+```cpp
+class MyString {
+    char* data;
+    int length;
+public:
+    // Helper: swap
+    void swap(MyString& other) noexcept {
+        std::swap(data, other.data);
+        std::swap(length, other.length);
+    }
+    
+    // Copy constructor
+    MyString(const MyString& other) {
+        length = other.length;
+        data = new char[length + 1];
+        strcpy(data, other.data);
+    }
+    
+    // Assignment dùng copy-and-swap
+    MyString& operator=(MyString other) {  // ⭐ Pass by value
+        swap(other);  // Swap với copy
+        return *this;
+        // other's destructor cleans up old data
+    }
+};
+```
+
+ƯU ĐIỂM:
+✓ Exception-safe
+✓ Self-assignment safe
+✓ Ngắn gọn
+✓ Reuse copy constructor
+
+═══════════════════════════════════════════════════════════════════════════════
+CHAPTER 32: STATIC MEMBERS
+═══════════════════════════════════════════════════════════════════════════════
+
+32.1. STATIC DATA MEMBERS (Gki/test2.cpp)
+──────────────────────────────────────────
+
+KHÁI NIỆM:
+Static members được share bởi TẤT CẢ objects của class.
+
+VÍ DỤ TỪ TEST:
+```cpp
+class ExamA {
+public:
+    int ax;                    // Instance member
+    static int sA;             // ⭐ Static member (shared)
+    
+    ExamA(int x = 0) : ax(x) {}
+};
+
+// ⭐ PHẢI define ở ngoài class
+int ExamA::sA = 100;
+
+int main() {
+    ExamA obj1, obj2, obj3;
+    
+    obj1.ax = 10;
+    obj2.ax = 20;
+    obj3.ax = 30;
+    // Each object has its own ax
+    
+    ExamA::sA = 200;  // Change static member
+    // ✓ ALL objects see sA = 200
+    
+    cout << obj1.sA << endl;  // 200
+    cout << obj2.sA << endl;  // 200
+    cout << obj3.sA << endl;  // 200
+}
+```
+
+HÌNH DUNG:
+```
+Memory:
+┌────────────┐
+│ obj1       │
+│  ax = 10   │──┐
+└────────────┘  │
+┌────────────┐  │
+│ obj2       │  ├─→ All share
+│  ax = 20   │──┤   sA = 200
+└────────────┘  │
+┌────────────┐  │
+│ obj3       │  │
+│  ax = 30   │──┘
+└────────────┘
+
+Static:
+┌────────────┐
+│ sA = 200   │
+└────────────┘
+```
+
+32.2. STATIC MEMBER FUNCTIONS
+──────────────────────────────
+
+VÍ DỤ:
+```cpp
+class Counter {
+    static int count;
+public:
+    Counter() { count++; }
+    ~Counter() { count--; }
+    
+    // ⭐ Static function
+    static int getCount() {
+        return count;
+    }
+};
+
+int Counter::count = 0;
+
+int main() {
+    cout << Counter::getCount() << endl;  // 0
+    
+    Counter c1, c2, c3;
+    cout << Counter::getCount() << endl;  // 3
+}
+```
+
+LƯU Ý:
+- Static functions KHÔNG có this pointer
+- Chỉ access được static members
+- Gọi qua class name: Class::function()
+
+32.3. STATIC LOCAL VARIABLES (Gki/test2.cpp)
+─────────────────────────────────────────────
+
+VÍ DỤ TỪ TEST:
+```cpp
+class ExamA {
+public:
+    static int nextId() {
+        static int id = 0;  // ⭐ Static local
+        return ++id;
+    }
+};
+
+int main() {
+    cout << ExamA::nextId() << endl;  // 1
+    cout << ExamA::nextId() << endl;  // 2
+    cout << ExamA::nextId() << endl;  // 3
+    // id giữ giá trị giữa các lần gọi
+}
+```
+
+HÀNH VI:
+- Init chỉ 1 lần (first call)
+- Giữ giá trị giữa các lần gọi
+- Destroy khi program kết thúc
+
+═══════════════════════════════════════════════════════════════════════════════
+CHAPTER 33: FRIEND FUNCTIONS & CLASSES
+═══════════════════════════════════════════════════════════════════════════════
+
+33.1. FRIEND FUNCTION
+─────────────────────
+
+KHÁI NIỆM:
+Friend function có thể access private/protected members.
+
+VÍ DỤ:
+```cpp
+class MyClass {
+    int secret;
+public:
+    MyClass(int s) : secret(s) {}
+    
+    // ⭐ Declare friend
+    friend void showSecret(const MyClass& obj);
+};
+
+// Friend function CAN access private
+void showSecret(const MyClass& obj) {
+    cout << "Secret: " << obj.secret << endl;  // ✓ OK!
+}
+
+int main() {
+    MyClass obj(42);
+    showSecret(obj);  // Secret: 42
+}
+```
+
+33.2. FRIEND CLASS
+──────────────────
+
+VÍ DỤ:
+```cpp
+class ClassA {
+    int secret;
+public:
+    ClassA(int s) : secret(s) {}
+    
+    // ⭐ Declare friend class
+    friend class ClassB;
+};
+
+class ClassB {
+public:
+    void showSecret(const ClassA& a) {
+        cout << a.secret << endl;  // ✓ OK: B is friend of A
+    }
+};
+
+int main() {
+    ClassA a(42);
+    ClassB b;
+    b.showSecret(a);  // 42
+}
+```
+
+33.3. KHI NÀO DÙNG FRIEND
+─────────────────────────
+
+✓ DÙNG KHI:
+- Stream operators (<<, >>)
+- Binary operators cần symmetry
+- Closely related classes
+- Performance-critical code
+
+❌ TRÁNH KHI:
+- Có thể dùng public interface
+- Breaking encapsulation không cần thiết
+- Không có relationship rõ ràng
+
+═══════════════════════════════════════════════════════════════════════════════
+
+🎯 TỔNG KẾT PHẦN IV: ADVANCED CONCEPTS
+═════════════════════════════════════
+
+CHECKLIST QUAN TRỌNG:
+□ Templates cho code reuse với multiple types
+□ Class templates cần explicit instantiation
+□ Exception handling: try-catch-throw
+□ RAII pattern tự động quản lý resources
+□ Rule of Three: Destructor + Copy ctor + Copy assignment
+□ Rule of Five: + Move ctor + Move assignment
+□ Deep copy cho dynamic memory
+□ Self-assignment check trong operator=
+□ Static members shared by all objects
+□ Static local variables giữ giá trị giữa calls
+□ Friend functions access private members
+□ Dùng friend cho operators khi cần
+
+ĐÃ HỌC TỪ CODE TEST:
+✓ Template/B1.cpp: Class templates với multiple types
+✓ Test2/on_8.cpp: Copy constructor và assignment operator
+✓ Gki/test2.cpp: Static members và static local variables
+
+═══════════════════════════════════════════════════════════════════════════════
+
+TIẾP TỤC VỚI PHẦN V: SUMMARY & PRACTICE
+Xem file Part5_Summary_Practice.txt
+
+════════════════════════════════════════════════════════════════════════════════

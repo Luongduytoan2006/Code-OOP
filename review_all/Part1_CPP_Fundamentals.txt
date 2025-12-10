@@ -1,0 +1,857 @@
+================================================================================
+                   PHẦN I: C++ FUNDAMENTALS (Test 1)
+================================================================================
+
+Tài liệu ôn tập chi tiết về các khái niệm cơ bản trong C++
+Format: Khái niệm → Lưu ý → Ví dụ code thực tế → Lỗi thường gặp
+
+================================================================================
+
+MỤC LỤC
+═══════
+
+1. REFERENCES (THAM CHIẾU)
+   1.1. Khái niệm cơ bản & Syntax
+   1.2. Reference binding & Lưu ý
+   1.3. Ví dụ code thực tế (Test1/on_1.cpp)
+   1.4. Const reference
+   1.5. Dangling reference - Lỗi nguy hiểm
+   
+2. POINTERS (CON TRỎ)
+   2.1. Khái niệm & Toán tử *, &
+   2.2. Null pointer
+   2.3. Pointer arithmetic
+   2.4. Reference vs Pointer - So sánh chi tiết
+   
+3. SIZEOF OPERATOR ⭐ QUAN TRỌNG
+   3.1. Khái niệm cơ bản
+   3.2. sizeof KHÔNG có side effects (Test1/on_44.cpp)
+   3.3. sizeof với array
+   3.4. Array decay - Lỗi cực kỳ thường gặp
+   3.5. sizeof với pointer
+   3.6. sizeof với class/struct (padding)
+   3.7. sizeof với inheritance
+   3.8. sizeof với empty class
+   3.9. Tóm tắt quan trọng
+   
+4. DEFAULT PARAMETERS
+   4.1. Khái niệm & Cú pháp
+   4.2. Quy tắc vàng: Default phải ở cuối
+   4.3. Ambiguity với function overloading (Test2/on_1.cpp)
+   4.4. Lỗi thường gặp
+   
+5. PASS BY VALUE/REFERENCE/POINTER
+   5.1. Pass by value
+   5.2. Pass by reference
+   5.3. Pass by pointer
+   5.4. Bảng quyết định khi nào dùng cái gì
+   
+6. TYPE CONVERSION
+   6.1. Implicit conversion
+   6.2. Type promotion hierarchy
+   6.3. Explicit cast
+
+================================================================================
+
+═══════════════════════════════════════════════════════════════════════════════
+CHAPTER 1: REFERENCES (THAM CHIẾU)
+═══════════════════════════════════════════════════════════════════════════════
+
+1.1. KHÁI NIỆM CƠ BẢN
+──────────────────────
+
+ĐỊNH NGHĨA:
+Reference (tham chiếu) là một ALIAS (bí danh) cho một biến đã tồn tại.
+Nó KHÔNG phải là một object mới, mà chỉ là "tên khác" của biến gốc.
+
+CÚ PHÁP:
+    int x = 10;
+    int& ref = x;  // ref là bí danh của x
+    
+    ref = 20;      // Thay đổi ref = thay đổi x
+    cout << x;     // 20
+
+HÌNH DUNG:
+    Biến gốc: [x: 10] ← Địa chỉ 0x1000
+    Reference: [ref] → Cũng trỏ đến 0x1000
+    
+    Khi thay đổi ref → Thay đổi trực tiếp x
+
+ĐẶC ĐIỂM QUAN TRỌNG:
+✓ PHẢI khởi tạo ngay khi khai báo
+  int& ref;  // ❌ ERROR! Phải khởi tạo
+  
+✓ KHÔNG THỂ thay đổi target (re-bind) sau khi khởi tạo
+  int x = 10, y = 20;
+  int& ref = x;
+  ref = y;  // Gán giá trị y cho x, KHÔNG phải ref trỏ sang y
+  
+✓ KHÔNG có null reference
+  int& ref = nullptr;  // ❌ ERROR!
+  
+✓ KHÔNG chiếm thêm memory (compiler optimization)
+  sizeof(ref) == sizeof(int), không có overhead
+
+1.2. VÍ DỤ CODE THỰC TẾ (Test1/on_1.cpp)
+─────────────────────────────────────────
+
+```cpp
+#include <iostream>
+using namespace std;
+
+int main(){
+    int var_x = 2, var_y = 6;
+    int& ref_x = var_x;  // ref_x là alias của var_x
+    int& ref_y = var_y;  // ref_y là alias của var_y
+
+    // Test 1: Tăng biến gốc
+    var_x++;
+    cout << var_x << " " << ref_x << endl;  // 3 3
+    
+    // Test 2: Tăng reference
+    ref_x++;
+    cout << var_x << " " << ref_x << endl;  // 4 4
+    
+    // Test 3: Phép gán phức tạp
+    var_x = ref_x++; 
+    cout << var_x << " " << ref_x << endl;  // 4 4
+    
+    return 0;
+}
+```
+
+PHÂN TÍCH CHI TIẾT:
+═══════════════════
+
+Ban đầu:
+    var_x = 2, ref_x → var_x
+
+Test 1: var_x++
+    var_x = 3, ref_x = 3 (cùng biến)
+    Output: 3 3 ✓
+
+Test 2: ref_x++
+    ref_x tăng = var_x tăng
+    var_x = 4, ref_x = 4
+    Output: 4 4 ✓
+
+Test 3: var_x = ref_x++
+    Phép gán có thứ tự:
+    1. Tính ref_x++ (postfix)
+       - Trả về giá trị CŨ: 4
+       - Tăng sau: ref_x = 5 (var_x = 5)
+    2. Gán: var_x = 4
+    
+    Kết quả:
+    - var_x = 4 (giá trị cũ của ref_x)
+    - ref_x = var_x = 4 (vì ref_x là alias của var_x)
+    
+    ❓ Tại sao không phải 4 5?
+    → Vì sau khi ref_x++ (ref_x/var_x = 5)
+    → var_x = 4 gán lại, ghi đè lên giá trị 5
+    → Cả var_x và ref_x đều = 4
+    
+    Output: 4 4 ✓ (KHÔNG phải 4 5!)
+
+1.3. CONST REFERENCE
+────────────────────
+
+KHÁI NIỆM:
+Const reference cho phép truy cập biến mà KHÔNG thay đổi giá trị.
+
+CÚ PHÁP:
+    void print(const int& x) {
+        cout << x;      // ✓ OK: đọc được
+        // x = 10;      // ❌ ERROR: không thể thay đổi
+    }
+
+ƯU ĐIỂM:
+✓ KHÔNG copy → Efficient (tiết kiệm memory & time)
+✓ KHÔNG thay đổi → Safe (clear intent)
+✓ CÓ THỂ nhận temporary/rvalue
+✓ Self-documenting code (rõ ý nghĩa)
+
+VÍ DỤ NHẬN TEMPORARY:
+    void print(const int& x) {
+        cout << x;
+    }
+    
+    int val = 5;
+    print(val);      // ✓ OK: Bind với lvalue
+    print(10);       // ✓ OK: Bind với rvalue (temporary)
+    print(3 + 4);    // ✓ OK: Bind với expression result
+    
+    // Non-const reference không bind được rvalue:
+    void modify(int& x) {
+        x++;
+    }
+    
+    modify(10);      // ❌ ERROR: Cannot bind rvalue to non-const reference
+
+1.4. DANGLING REFERENCE - LỖI NGUY HIỂM
+────────────────────────────────────────
+
+KHÁI NIỆM:
+Dangling reference xảy ra khi reference trỏ đến biến đã bị hủy.
+
+❌ LỖI CỰC KỲ NGUY HIỂM:
+    int& getReference() {
+        int x = 10;        // Local variable
+        return x;          // ❌ NGUY HIỂM! x bị hủy sau khi return
+    }
+    
+    int main() {
+        int& ref = getReference();
+        cout << ref;       // ⚠️ UNDEFINED BEHAVIOR!
+    }
+
+QUY TẮC AN TOÀN:
+═══════════════
+
+❌ KHÔNG return reference đến:
+   - Local variable
+   - Temporary object
+   - Deleted memory
+   - Parameter passed by value
+
+✓ CÓ THỂ return reference đến:
+   - Static variable
+   - Global variable
+   - Member variable (nếu object tồn tại)
+   - Parameter passed by reference (nếu chắc tồn tại)
+
+═══════════════════════════════════════════════════════════════════════════════
+CHAPTER 2: POINTERS (CON TRỎ)
+═══════════════════════════════════════════════════════════════════════════════
+
+2.1. KHÁI NIỆM CƠ BẢN
+──────────────────────
+
+ĐỊNH NGHĨA:
+Pointer (con trỏ) là biến lưu trữ ĐỊA CHỈ của biến khác.
+
+CÚ PHÁP:
+    int x = 10;
+    int* ptr = &x;  // ptr lưu địa chỉ của x
+    
+    cout << ptr;    // In địa chỉ (VD: 0x7ffd5b2c3e4c)
+    cout << *ptr;   // In giá trị tại địa chỉ: 10
+    
+    *ptr = 20;      // Thay đổi giá trị x qua pointer
+    cout << x;      // 20
+
+TOÁN TỬ:
+- & : Address-of operator (lấy địa chỉ)
+- * : Dereference operator (lấy giá trị tại địa chỉ)
+
+2.2. REFERENCE VS POINTER - SO SÁNH CHI TIẾT
+─────────────────────────────────────────────
+
+BẢNG SO SÁNH:
+┌──────────────────────┬──────────────────────┬────────────────────────┐
+│ ĐẶC ĐIỂM             │ REFERENCE            │ POINTER                │
+├──────────────────────┼──────────────────────┼────────────────────────┤
+│ Khởi tạo             │ BẮT BUỘC ngay        │ Không bắt buộc         │
+│ Null                 │ KHÔNG THỂ            │ Có thể (nullptr)       │
+│ Re-assign (đổi mục)  │ KHÔNG THỂ            │ Có thể                 │
+│ Syntax truy cập      │ Đơn giản (.)         │ Phức tạp (*, ->)       │
+│ Memory overhead      │ Không (optimized)    │ Có (4/8 bytes)         │
+│ Safety               │ An toàn hơn          │ Dễ lỗi hơn             │
+│ Arithmetic           │ Không có             │ Có (ptr++, ptr+n)      │
+│ Use case chính       │ Function parameters  │ Dynamic allocation     │
+└──────────────────────┴──────────────────────┴────────────────────────┘
+
+VÍ DỤ SO SÁNH:
+```cpp
+int x = 10, y = 20;
+
+// REFERENCE:
+int& ref = x;    // Phải khởi tạo ngay
+ref = 30;        // x = 30
+ref = y;         // x = 20 (GÁN GIÁ TRỊ, KHÔNG đổi target)
+
+// POINTER:
+int* ptr = &x;   // ptr trỏ đến x
+*ptr = 30;       // x = 30
+ptr = &y;        // ptr GIỜ TRỎ SANG y (ĐỔI TARGET)
+*ptr = 50;       // y = 50, x vẫn = 30
+```
+
+═══════════════════════════════════════════════════════════════════════════════
+CHAPTER 3: SIZEOF OPERATOR ⭐ CỰC KỲ QUAN TRỌNG
+═══════════════════════════════════════════════════════════════════════════════
+
+3.1. KHÁI NIỆM CƠ BẢN
+──────────────────────
+
+ĐỊNH NGHĨA:
+sizeof là operator trả về kích thước (số bytes) của type hoặc variable.
+
+CÚ PHÁP:
+    sizeof(type)
+    sizeof(variable)
+    sizeof variable  // Không cần () với variable
+
+VÍ DỤ:
+    cout << sizeof(int);      // 4 (bytes)
+    cout << sizeof(char);     // 1
+    cout << sizeof(double);   // 8
+    cout << sizeof(float);    // 4
+
+ĐẶC ĐIỂM QUAN TRỌNG:
+✓ sizeof là COMPILE-TIME operator
+✓ Return type là size_t
+✓ Đơn vị: BYTES (không phải bits)
+
+3.2. ⭐⭐⭐ sizeof KHÔNG CÓ SIDE EFFECTS ⭐⭐⭐
+──────────────────────────────────────────
+
+Đây là điều QUAN TRỌNG NHẤT cần nhớ về sizeof!
+
+VÍ DỤ TỪ TEST (Test1/on_44.cpp):
+═══════════════════════════════
+```cpp
+#include <iostream>
+using namespace std;
+
+int main(){
+    int x = 5;
+    int y = sizeof(x++);  // sizeof KHÔNG THỰC HIỆN x++
+    
+    cout << x << y;  // Output: 54
+    // x = 5 (KHÔNG đổi!)
+    // y = 4 (sizeof(int))
+    return 0;
+}
+```
+
+PHÂN TÍCH:
+- sizeof chỉ quan tâm TYPE của x++
+- x++ có type là int
+- sizeof(int) = 4
+- x++ KHÔNG được thực thi!
+- y = 4, x = 5 (không đổi)
+
+VÍ DỤ TỪ TEST (Test1/on_32.cpp):
+═══════════════════════════════
+```cpp
+#include <iostream>
+using namespace std;
+
+int main(){
+    int x = 5;
+    float y;
+    cout << sizeof(x + y) << endl;        // 4 (sizeof(float))
+    cout << sizeof(++x + y) << x << endl; // 45
+    // x vẫn = 5 vì ++x trong sizeof KHÔNG chạy!
+}
+```
+
+QUAN TRỌNG:
+🔥 sizeof KHÔNG BAO GIỜ có side effects
+🔥 sizeof chỉ quan tâm TYPE, không quan tâm VALUE
+🔥 Mọi expression bên trong sizeof KHÔNG được evaluate
+
+3.3. SIZEOF VỚI ARRAY
+─────────────────────
+
+sizeof với array trả về TỔNG kích thước tất cả phần tử.
+
+VÍ DỤ:
+    int arr[10];
+    cout << sizeof(arr);        // 40 (10 * 4)
+    cout << sizeof(arr[0]);     // 4
+    
+    // Công thức tính số phần tử:
+    int length = sizeof(arr) / sizeof(arr[0]);  // 10
+
+3.4. ⚠️ ARRAY DECAY - LỖI CỰC KỲ THƯỜNG GẶP
+────────────────────────────────────────────
+
+Khi truyền array vào function, nó "decay" thành POINTER.
+
+❌ LỖI KINH ĐIỂN:
+```cpp
+void func(int arr[]) {
+    int size = sizeof(arr) / sizeof(arr[0]);  // ❌ SAI!
+    cout << size;  // Không phải 10!
+}
+
+int main() {
+    int arr[10];
+    cout << sizeof(arr);  // 40 (✓ đúng - trong main)
+    func(arr);  // arr decay thành pointer
+}
+```
+
+✓ GIẢI PHÁP: Truyền size như tham số
+```cpp
+void func(int arr[], int size) {
+    for (int i = 0; i < size; i++) {
+        cout << arr[i];
+    }
+}
+
+int main() {
+    int arr[10];
+    func(arr, sizeof(arr)/sizeof(arr[0]));
+}
+```
+
+3.9. TÓM TẮT QUAN TRỌNG
+────────────────────────
+
+CHECKLIST:
+□ sizeof KHÔNG có side effects
+□ sizeof(array) trong function = sizeof(pointer)
+□ sizeof(pointer) = 4 (32-bit) hoặc 8 (64-bit)
+□ sizeof(class) bao gồm padding
+□ sizeof(Empty class) = 1
+
+═══════════════════════════════════════════════════════════════════════════════
+CHAPTER 4: DEFAULT PARAMETERS
+═══════════════════════════════════════════════════════════════════════════════
+
+4.1. KHÁI NIỆM & CÚ PHÁP
+─────────────────────────
+
+ĐỊNH NGHĨA:
+Default parameters cho phép gọi function mà không cần truyền tất cả arguments.
+
+CÚ PHÁP:
+    void func(int x, int y = 10, int z = 5) {
+        cout << x + y + z;
+    }
+    
+    func(1, 2, 3);  // x=1, y=2, z=3 → Output: 6
+    func(1, 2);     // x=1, y=2, z=5 → Output: 8
+    func(1);        // x=1, y=10, z=5 → Output: 16
+
+VÍ DỤ TỪ TEST (Test1/on_33.cpp):
+═══════════════════════════════
+```cpp
+#include <iostream>
+using namespace std;
+
+void Func(int x, int y = 4) {
+    cout << x << y << endl;
+}
+
+int main(){
+    Func(2, 3);  // Output: 23
+    Func(5);     // Output: 54 (y dùng default = 4)
+    return 0;
+}
+```
+
+VÍ DỤ TỪ TEST (Test1/on_36.cpp):
+═══════════════════════════════
+```cpp
+#include <iostream>
+using namespace std;
+
+int Func(int x = 5, int y = 10, int z = 5) {
+    return x + y + z;
+}
+
+int main(){
+    cout << Func(10, 2, 3);  // 10 + 2 + 3 = 15
+    return 0;
+}
+```
+
+4.2. QUY TẮC VÀNG: DEFAULT PHẢI Ở CUỐI
+───────────────────────────────────────
+
+⭐ QUY TẮC QUAN TRỌNG:
+Default parameters PHẢI nằm ở CUỐI danh sách parameters.
+
+✓ ĐÚNG:
+    void func(int x, int y = 10, int z = 5);        // OK
+    void func(int x, int y, int z = 5);             // OK
+    void func(int x = 1, int y = 10, int z = 5);    // OK
+
+❌ SAI:
+    void func(int x = 10, int y);              // ERROR!
+    void func(int x, int y = 10, int z);       // ERROR!
+    void func(int x = 1, int y, int z = 5);    // ERROR!
+
+TẠI SAO?
+- Compiler không biết cách map arguments
+- Arguments được gán từ trái sang phải
+- Nếu có "lỗ hổng" ở giữa → Ambiguity
+
+HÌNH DUNG:
+    func(int x = 10, int y, int z = 5);
+    func(20, 30);  // x=20, y=30, z=5? Hay x=10, y=20, z=30?
+    // → Ambiguous! Compiler không biết!
+
+4.3. AMBIGUITY VỚI FUNCTION OVERLOADING
+────────────────────────────────────────
+
+Default parameters + Function overloading = ⚠️ NGUY HIỂM!
+
+VÍ DỤ TỪ TEST (Test2/on_1.cpp):
+═══════════════════════════════
+```cpp
+#include <bits/stdc++.h>
+using namespace std;
+
+int Func(int, int);
+int Func(int, int, int);
+// ❌ ERROR khi gọi Func(2, 4) vì không biết chọn hàm nào
+
+int main(){
+    // cout << Func(2, 4);     // ❌ COMPILE ERROR: Ambiguous
+    cout << Func(2, 4, 6);     // ✓ OK: Gọi Func(int, int, int)
+}
+
+int Func(int a, int b){
+    return a * b;
+}
+
+int Func(int a, int b, int c = 6){
+    return a * b * c;
+}
+```
+
+PHÂN TÍCH:
+──────────
+Func(2, 4) có 2 lựa chọn:
+1. Func(int, int) → 2 * 4 = 8
+2. Func(int, int, int = 6) → 2 * 4 * 6 = 48 (dùng default cho c)
+
+→ Compiler KHÔNG BIẾT chọn hàm nào
+→ COMPILE ERROR: Ambiguous call
+
+✓ GỌI RÕ RÀNG:
+    Func(2, 4, 6);   // OK: Chắc chắn gọi Func(int, int, int)
+    // Phải truyền đủ 3 arguments để tránh ambiguity
+
+4.4. LỖI THƯỜNG GẶP
+───────────────────
+
+❌ LỖI 1: Default không ở cuối
+    void func(int x = 10, int y);  // ERROR!
+
+❌ LỖI 2: Redeclaration với default khác
+    void func(int x = 10);
+    void func(int x = 20);  // ERROR! Conflicting defaults
+
+❌ LỖI 3: Ambiguity với overloading
+    int func(int x, int y);
+    int func(int x, int y, int z = 5);
+    func(1, 2);  // ERROR! Ambiguous
+
+✓ BEST PRACTICES:
+1. Default parameters ở cuối
+2. Cẩn thận khi kết hợp với overloading
+3. Document rõ default values
+4. Dùng default cho optional parameters thật sự
+
+═══════════════════════════════════════════════════════════════════════════════
+CHAPTER 5: PASS BY VALUE/REFERENCE/POINTER
+═══════════════════════════════════════════════════════════════════════════════
+
+5.1. PASS BY VALUE
+──────────────────
+
+KHÁI NIỆM:
+Truyền COPY của biến vào function. Thay đổi trong function KHÔNG ảnh hưởng gốc.
+
+VÍ DỤ TỪ TEST (Test1/on_37.cpp):
+═══════════════════════════════
+```cpp
+#include <iostream>
+using namespace std;
+
+void Func(int x, int y){
+    x = 2;
+    y = 1;
+}
+
+int main(){
+    int x = 1;
+    Func(x, x);
+    cout << x;  // Output: 1 (x KHÔNG đổi!)
+    return 0;
+}
+```
+
+PHÂN TÍCH:
+- Func nhận COPY của x (2 lần)
+- Thay đổi x, y trong Func chỉ ảnh hưởng copies
+- x gốc trong main KHÔNG đổi
+- Output: 1
+
+ƯU ĐIỂM:
+✓ An toàn: Không thay đổi biến gốc
+✓ Đơn giản: Không cần quan tâm side effects
+
+NHƯỢC ĐIỂM:
+❌ Chậm với object lớn (copy toàn bộ)
+❌ Tốn memory
+
+5.2. PASS BY REFERENCE
+──────────────────────
+
+KHÁI NIỆM:
+Truyền ALIAS của biến. Thay đổi trong function ảnh hưởng biến gốc.
+
+VÍ DỤ:
+```cpp
+void swap(int& a, int& b) {
+    int temp = a;
+    a = b;
+    b = temp;
+}
+
+int main() {
+    int x = 10, y = 20;
+    swap(x, y);
+    cout << x << " " << y;  // 20 10 (x, y ĐÃ ĐỔI)
+}
+```
+
+ƯU ĐIỂM:
+✓ Nhanh: Không copy
+✓ Có thể modify biến gốc
+✓ Efficient với object lớn
+
+NHƯỢC ĐIỂM:
+❌ Có thể thay đổi biến gốc (cẩn thận!)
+❌ Không dùng được với literal/temporary (dùng const ref)
+
+5.3. PASS BY POINTER
+────────────────────
+
+KHÁI NIỆM:
+Truyền địa chỉ của biến. Giống reference nhưng có thể nullptr.
+
+VÍ DỤ:
+```cpp
+void increment(int* ptr) {
+    if (ptr != nullptr) {
+        (*ptr)++;
+    }
+}
+
+int main() {
+    int x = 10;
+    increment(&x);
+    cout << x;  // 11
+    
+    increment(nullptr);  // OK: Không crash
+}
+```
+
+ƯU ĐIỂM:
+✓ Có thể nullptr (optional parameter)
+✓ Có thể đổi target
+✓ Rõ ràng khi gọi (phải dùng &)
+
+NHƯỢC ĐIỂM:
+❌ Phải check nullptr
+❌ Syntax phức tạp hơn (*, &, ->)
+
+5.4. BẢNG QUYẾT ĐỊNH KHI NÀO DÙNG CÁI GÌ
+─────────────────────────────────────────
+
+┌────────────────────────────┬───────────────────┐
+│ TÌNH HUỐNG                 │ DÙNG              │
+├────────────────────────────┼───────────────────┤
+│ Small types (int, char)    │ Pass by VALUE     │
+│ Chỉ đọc, không đổi         │ const REFERENCE   │
+│ Cần modify biến gốc        │ REFERENCE         │
+│ Optional parameter         │ POINTER           │
+│ Có thể null               │ POINTER           │
+│ Array/Dynamic memory       │ POINTER           │
+│ Large object, chỉ đọc      │ const REFERENCE   │
+│ Large object, cần đổi      │ REFERENCE         │
+└────────────────────────────┴───────────────────┘
+
+VÍ DỤ:
+```cpp
+// Small type → Value
+int add(int a, int b) {
+    return a + b;
+}
+
+// Large object, chỉ đọc → const reference
+void print(const string& str) {
+    cout << str;
+}
+
+// Cần modify → Reference
+void uppercase(string& str) {
+    // ...
+}
+
+// Optional → Pointer
+void process(int* optional = nullptr) {
+    if (optional) {
+        // ...
+    }
+}
+```
+
+═══════════════════════════════════════════════════════════════════════════════
+CHAPTER 6: TYPE CONVERSION
+═══════════════════════════════════════════════════════════════════════════════
+
+6.1. IMPLICIT CONVERSION
+────────────────────────
+
+KHÁI NIỆM:
+Compiler tự động chuyển đổi type khi cần thiết.
+
+VÍ DỤ:
+```cpp
+int x = 5;
+double y = x;  // int → double (implicit)
+cout << y;     // 5.0
+
+float f = 3.14f;
+int i = f;     // float → int (implicit, mất phần thập phân)
+cout << i;     // 3
+```
+
+VÍ DỤ TỪ TEST (Test1/on_32.cpp):
+═══════════════════════════════
+```cpp
+#include <iostream>
+using namespace std;
+
+int main(){
+    int x = 5;
+    float y;
+    cout << sizeof(x + y) << endl;  // 4
+    // x + y → float (int promoted to float)
+    // sizeof(float) = 4
+}
+```
+
+6.2. TYPE PROMOTION HIERARCHY
+──────────────────────────────
+
+QUY TẮC PROMOTION (Từ nhỏ → lớn):
+══════════════════════════════════
+
+    char/short → int → long → long long → float → double → long double
+
+VÍ DỤ:
+```cpp
+char c = 'A';
+short s = 100;
+int i = 1000;
+float f = 3.14f;
+double d = 2.718;
+
+// char + int → int
+cout << sizeof(c + i);  // 4 (int)
+
+// int + float → float
+cout << sizeof(i + f);  // 4 (float)
+
+// float + double → double
+cout << sizeof(f + d);  // 8 (double)
+
+// short + short → int
+cout << sizeof(s + s);  // 4 (int, không phải short!)
+```
+
+LƯU Ý QUAN TRỌNG:
+─────────────────
+⚠️ char, short LUÔN được promote lên int trong expressions
+⚠️ float + double = double
+⚠️ int / int = int (không phải double!)
+
+VÍ DỤ BẪY:
+```cpp
+int a = 5, b = 2;
+cout << a / b;        // 2 (int division)
+cout << (double)a / b; // 2.5 (a cast to double)
+cout << a / 2.0;      // 2.5 (2.0 là double)
+```
+
+6.3. EXPLICIT CAST
+──────────────────
+
+KHÁI NIỆM:
+Programmer chủ động chuyển đổi type.
+
+4 LOẠI CAST TRONG C++:
+═══════════════════════
+
+1. C-STYLE CAST (Không khuyên dùng):
+    int x = 10;
+    double y = (double)x;
+
+2. STATIC_CAST (Compile-time, khuyên dùng):
+    int x = 10;
+    double y = static_cast<double>(x);
+
+3. DYNAMIC_CAST (Runtime, dùng với polymorphism):
+    Base* b = new Derived();
+    Derived* d = dynamic_cast<Derived*>(b);
+
+4. CONST_CAST (Remove const):
+    const int x = 10;
+    int* p = const_cast<int*>(&x);
+
+5. REINTERPRET_CAST (Low-level, nguy hiểm):
+    int x = 10;
+    char* p = reinterpret_cast<char*>(&x);
+
+VÍ DỤ THỰC TẾ:
+```cpp
+// Division với floating point
+int a = 5, b = 2;
+double result = static_cast<double>(a) / b;  // 2.5
+
+// Array index
+int arr[10];
+double index = 3.7;
+arr[static_cast<int>(index)] = 100;  // arr[3] = 100
+```
+
+BEST PRACTICE:
+✓ Dùng static_cast trong C++ (không dùng C-style)
+✓ Tránh reinterpret_cast trừ khi thật sự cần
+✓ Cẩn thận với const_cast (có thể undefined behavior)
+✓ dynamic_cast dùng với polymorphism
+
+═══════════════════════════════════════════════════════════════════════════════
+
+🎯 TỔNG KẾT PHẦN I: C++ FUNDAMENTALS
+═══════════════════════════════════
+
+CHECKLIST QUAN TRỌNG:
+□ Reference là alias, không thể null, không thể re-bind
+□ Pointer có thể null, có thể đổi target
+□ sizeof KHÔNG có side effects (quan trọng nhất!)
+□ sizeof(array) trong function = sizeof(pointer) (array decay)
+□ Default parameters phải ở cuối
+□ Cẩn thận ambiguity với overloading + default
+□ Pass by value: Safe nhưng chậm với object lớn
+□ Pass by const reference: Nhanh, safe, dùng cho large objects
+□ Pass by reference: Khi cần modify
+□ Pass by pointer: Khi cần nullptr hoặc optional
+□ Type promotion: char/short → int, smaller → larger type
+□ Dùng static_cast thay vì C-style cast
+
+ĐÃ HỌC TỪ CODE TEST:
+✓ Test1/on_1.cpp: Reference behavior với var_x++, ref_x++
+✓ Test1/on_44.cpp: sizeof(x++) không có side effects (quan trọng!)
+✓ Test1/on_32.cpp: sizeof(x + y) với type promotion
+✓ Test1/on_33.cpp: Default parameters cơ bản
+✓ Test1/on_36.cpp: Multiple default parameters
+✓ Test1/on_37.cpp: Pass by value không đổi biến gốc
+✓ Test2/on_1.cpp: Ambiguity với overloading + default
+
+═══════════════════════════════════════════════════════════════════════════════
+
+TIẾP TỤC VỚI PHẦN II: OPERATOR OVERLOADING
+Xem file Part2_Operator_Overloading.txt
+
+════════════════════════════════════════════════════════════════════════════════

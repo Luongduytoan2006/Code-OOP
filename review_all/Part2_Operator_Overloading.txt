@@ -1,0 +1,1177 @@
+================================================================================
+                   PHẦN II: OPERATOR OVERLOADING (Test 2)
+================================================================================
+
+Tài liệu ôn tập chi tiết về Operator Overloading trong C++
+Format: Khái niệm → Lưu ý → Ví dụ code thực tế → Lỗi thường gặp
+
+================================================================================
+
+MỤC LỤC
+═══════
+
+7. OPERATOR OVERLOADING CƠ BẢN
+   7.1. Khái niệm & Mục đích
+   7.2. Member function syntax
+   7.3. Friend function syntax
+   7.4. Khi nào dùng member, khi nào dùng friend
+   
+8. ARITHMETIC OPERATORS (+, -, *, /)
+   8.1. Khái niệm & Return type
+   8.2. Ví dụ code (Test2/on_15.cpp, on_18.cpp)
+   8.3. operator+ return by value
+   8.4. Lỗi thường gặp: Return type sai
+   
+9. COMPOUND ASSIGNMENT (+=, -=, *=, /=)
+   9.1. Khái niệm & Return reference
+   9.2. Cho phép chain: a += b += c
+   9.3. Implement operator+ bằng operator+=
+   
+10. STREAM OPERATORS (<<, >>)
+    10.1. Tại sao PHẢI là friend function
+    10.2. Ví dụ code chi tiết (Test2/on_18.cpp)
+    10.3. Return stream& để chain
+    10.4. Lỗi: Làm member function
+    
+11. COMPARISON OPERATORS (==, !=, <, >, <=, >=)
+    11.1. Implement == và <
+    11.2. Derive các toán tử khác
+    11.3. const-correctness
+    
+12. SUBSCRIPT OPERATOR ([])
+    12.1. PHẢI là member function
+    12.2. Return reference để gán được (Test2/on_24.cpp)
+    12.3. 2 versions: const và non-const
+    12.4. Bounds checking
+    
+13. FUNCTION CALL OPERATOR (())
+    13.1. Functors - Function objects (Test2/on_3.cpp)
+    13.2. Ứng dụng trong STL
+    
+14. ASSIGNMENT OPERATOR (=)
+    14.1. PHẢI là member function
+    14.2. Self-assignment check (Test2/on_8.cpp)
+    14.3. Return *this
+    14.4. Deep copy
+    
+15. SPECIAL OPERATORS
+    15.1. new & delete overloading
+    15.2. Type conversion operators
+    15.3. Comma operator
+    
+16. FUNCTION OVERLOADING
+    16.1. Overload resolution
+    16.2. Ambiguity với default parameters (Test2/on_1.cpp)
+    16.3. Type promotion trong overloading
+    
+17. CONST-CORRECTNESS ⭐ CỰC KỲ QUAN TRỌNG
+    17.1. Const member function
+    17.2. Const parameters
+    17.3. Const return type
+    17.4. Checklist
+
+================================================================================
+
+═══════════════════════════════════════════════════════════════════════════════
+CHAPTER 7: OPERATOR OVERLOADING CƠ BẢN
+═══════════════════════════════════════════════════════════════════════════════
+
+7.1. KHÁI NIỆM & MỤC ĐÍCH
+──────────────────────────
+
+ĐỊNH NGHĨA:
+Operator overloading cho phép định nghĩa lại operators (+, -, *, /, [], <<, v.v.) 
+để làm việc với custom classes.
+
+MỤC ĐÍCH:
+✓ Làm code tự nhiên, dễ đọc
+✓ Giống built-in types
+✓ Hỗ trợ STL algorithms
+
+VÍ DỤ:
+```cpp
+// KHÔNG có operator overloading:
+Complex c3 = c1.add(c2);
+
+// CÓ operator overloading:
+Complex c3 = c1 + c2;  // ✓ Tự nhiên hơn!
+```
+
+7.2. MEMBER FUNCTION SYNTAX
+────────────────────────────
+
+CÚ PHÁP:
+    ReturnType operator@(parameters)
+
+VÍ DỤ:
+```cpp
+class Complex {
+    double real, imag;
+public:
+    Complex(double r = 0, double i = 0) : real(r), imag(i) {}
+    
+    // Member function - 1 operand (right)
+    Complex operator+(const Complex& other) const {
+        return Complex(real + other.real, imag + other.imag);
+    }
+};
+
+int main() {
+    Complex c1(1, 2), c2(3, 4);
+    Complex c3 = c1 + c2;  // c1.operator+(c2)
+}
+```
+
+CÁCH HOẠT ĐỘNG:
+    c1 + c2  →  c1.operator+(c2)
+    Left operand = this
+    Right operand = parameter
+
+7.3. FRIEND FUNCTION SYNTAX
+────────────────────────────
+
+CÚ PHÁP:
+    friend ReturnType operator@(left, right)
+
+VÍ DỤ:
+```cpp
+class Complex {
+    double real, imag;
+public:
+    Complex(double r = 0, double i = 0) : real(r), imag(i) {}
+    
+    // Friend function - 2 operands
+    friend Complex operator+(const Complex& left, const Complex& right) {
+        return Complex(left.real + right.real, left.imag + right.imag);
+    }
+};
+
+int main() {
+    Complex c1(1, 2), c2(3, 4);
+    Complex c3 = c1 + c2;  // operator+(c1, c2)
+}
+```
+
+CÁCH HOẠT ĐỘNG:
+    c1 + c2  →  operator+(c1, c2)
+    Left operand = first parameter
+    Right operand = second parameter
+
+7.4. KHI NÀO DÙNG MEMBER, KHI NÀO DÙNG FRIEND
+──────────────────────────────────────────────
+
+BẢNG QUYẾT ĐỊNH:
+┌──────────────────────────────┬────────────────────┐
+│ OPERATOR                     │ DÙNG               │
+├──────────────────────────────┼────────────────────┤
+│ =, [], (), ->                │ MEMBER (bắt buộc)  │
+│ <<, >>                       │ FRIEND (bắt buộc)  │
+│ +, -, *, /                   │ Member hoặc Friend │
+│ +=, -=, *=, /=               │ MEMBER (khuyên)    │
+│ ==, !=, <, >, <=, >=         │ Member hoặc Friend │
+│ ++, -- (prefix)              │ MEMBER             │
+│ ++, -- (postfix)             │ MEMBER             │
+└──────────────────────────────┴────────────────────┘
+
+QUY TẮC:
+✓ Dùng MEMBER khi:
+  - Left operand là object của class
+  - Operators: =, [], (), ->, +=, -=, etc.
+  
+✓ Dùng FRIEND khi:
+  - Left operand KHÔNG phải object của class
+  - Stream operators: <<, >>
+  - Cần symmetric operations
+
+═══════════════════════════════════════════════════════════════════════════════
+CHAPTER 8: ARITHMETIC OPERATORS (+, -, *, /)
+═══════════════════════════════════════════════════════════════════════════════
+
+8.1. KHÁI NIỆM & RETURN TYPE
+─────────────────────────────
+
+⭐ QUY TẮC QUAN TRỌNG:
+Arithmetic operators PHẢI return BY VALUE (new object), KHÔNG return reference!
+
+TẠI SAO?
+- Tạo object mới, không modify operands gốc
+- a + b không thay đổi a hay b
+- Return reference → Dangling reference (object local bị hủy)
+
+CÚ PHÁP:
+```cpp
+class MyClass {
+    int value;
+public:
+    MyClass(int v = 0) : value(v) {}
+    
+    // ✓ ĐÚNG: Return by value
+    MyClass operator+(const MyClass& other) const {
+        return MyClass(value + other.value);
+    }
+    
+    // ❌ SAI: Return by reference
+    MyClass& operator+(const MyClass& other) const {
+        MyClass result(value + other.value);  // Local variable
+        return result;  // ❌ Dangling reference!
+    }
+};
+```
+
+8.2. VÍ DỤ CODE TỪ TEST (Test2/on_18.cpp)
+──────────────────────────────────────────
+
+```cpp
+#include <iostream>
+using namespace std;
+
+class Base {
+    int x;
+public:
+    Base(int x = 0);
+    Base operator+(int);
+    friend ostream& operator<<(ostream&, Base);
+};
+
+Base::Base(int x) : x(x) {}
+
+Base Base::operator+(int x) {
+    Base obj;
+    obj.x = this->x + x;
+    return obj;
+}
+
+ostream& operator<<(ostream& o, Base obj) {
+    o << obj.x;
+    return o;
+}
+
+int main() {
+    Base obj1(1), obj2;
+    obj2 = obj1 + 2;     // obj1.operator+(2)
+                         // obj1.x (1) + 2 = 3
+    cout << obj2;        // Output: 3
+    return 0;
+}
+```
+
+PHÂN TÍCH:
+──────────
+1. obj1 + 2:
+   - Gọi obj1.operator+(2)
+   - this->x = 1
+   - Tạo obj mới với x = 1 + 2 = 3
+   - Return obj (by value)
+
+2. obj2 = ...:
+   - Gán obj vào obj2
+   - obj2.x = 3
+
+3. cout << obj2:
+   - Gọi operator<<(cout, obj2)
+   - In obj2.x = 3
+   - Output: 3
+
+8.3. BEST PRACTICES
+───────────────────
+
+✓ IMPLEMENT ĐẦY ĐỦ:
+```cpp
+class Complex {
+    double real, imag;
+public:
+    Complex(double r = 0, double i = 0) : real(r), imag(i) {}
+    
+    // operator+
+    Complex operator+(const Complex& other) const {
+        return Complex(real + other.real, imag + other.imag);
+    }
+    
+    // operator-
+    Complex operator-(const Complex& other) const {
+        return Complex(real - other.real, imag - other.imag);
+    }
+    
+    // operator*
+    Complex operator*(const Complex& other) const {
+        return Complex(
+            real * other.real - imag * other.imag,
+            real * other.imag + imag * other.real
+        );
+    }
+    
+    // operator/
+    Complex operator/(const Complex& other) const {
+        double denom = other.real * other.real + other.imag * other.imag;
+        return Complex(
+            (real * other.real + imag * other.imag) / denom,
+            (imag * other.real - real * other.imag) / denom
+        );
+    }
+};
+```
+
+8.4. LỖI THƯỜNG GẶP
+───────────────────
+
+❌ LỖI 1: Return reference
+```cpp
+MyClass& operator+(const MyClass& other) const {
+    MyClass result = ...;
+    return result;  // ❌ Dangling reference!
+}
+```
+
+❌ LỖI 2: Modify this
+```cpp
+MyClass operator+(const MyClass& other) {
+    value += other.value;  // ❌ Không nên modify this!
+    return *this;
+}
+```
+
+❌ LỖI 3: Quên const
+```cpp
+MyClass operator+(const MyClass& other) {  // ❌ Thiếu const
+    // ...
+}
+```
+
+✓ ĐÚNG:
+```cpp
+MyClass operator+(const MyClass& other) const {
+    return MyClass(value + other.value);
+}
+```
+
+═══════════════════════════════════════════════════════════════════════════════
+CHAPTER 9: COMPOUND ASSIGNMENT (+=, -=, *=, /=)
+═══════════════════════════════════════════════════════════════════════════════
+
+9.1. KHÁI NIỆM & RETURN REFERENCE
+──────────────────────────────────
+
+⭐ QUY TẮC QUAN TRỌNG:
+Compound assignment operators PHẢI return REFERENCE đến *this.
+
+TẠI SAO?
+- Modify object hiện tại
+- Cho phép chaining: a += b += c
+- Giống behavior của built-in types
+
+CÚ PHÁP:
+```cpp
+class MyClass {
+    int value;
+public:
+    MyClass(int v = 0) : value(v) {}
+    
+    // ✓ ĐÚNG: Return reference
+    MyClass& operator+=(const MyClass& other) {
+        value += other.value;
+        return *this;
+    }
+    
+    // ❌ SAI: Return by value
+    MyClass operator+=(const MyClass& other) {
+        value += other.value;
+        return *this;  // ❌ Return copy, không thể chain
+    }
+};
+```
+
+9.2. CHO PHÉP CHAINING
+──────────────────────
+
+VÍ DỤ:
+```cpp
+class MyClass {
+    int value;
+public:
+    MyClass(int v = 0) : value(v) {}
+    
+    MyClass& operator+=(const MyClass& other) {
+        value += other.value;
+        return *this;
+    }
+    
+    void print() const { cout << value << endl; }
+};
+
+int main() {
+    MyClass a(1), b(2), c(3);
+    
+    // Chaining:
+    a += b += c;
+    // Tương đương: b.operator+=(c); a.operator+=(b);
+    // b = b + c = 2 + 3 = 5
+    // a = a + b = 1 + 5 = 6
+    
+    a.print();  // 6
+    b.print();  // 5
+}
+```
+
+9.3. IMPLEMENT operator+ BẰNG operator+=
+─────────────────────────────────────────
+
+BEST PRACTICE:
+Implement += trước, rồi dùng nó để implement +
+
+```cpp
+class MyClass {
+    int value;
+public:
+    MyClass(int v = 0) : value(v) {}
+    
+    // Implement += trước
+    MyClass& operator+=(const MyClass& other) {
+        value += other.value;
+        return *this;
+    }
+    
+    // Implement + dựa trên +=
+    MyClass operator+(const MyClass& other) const {
+        MyClass result = *this;  // Copy
+        result += other;         // Dùng +=
+        return result;
+    }
+};
+```
+
+ƯU ĐIỂM:
+✓ Code reuse
+✓ Consistency
+✓ Dễ maintain
+
+═══════════════════════════════════════════════════════════════════════════════
+CHAPTER 10: STREAM OPERATORS (<<, >>)
+═══════════════════════════════════════════════════════════════════════════════
+
+10.1. TẠI SAO PHẢI LÀ FRIEND FUNCTION
+──────────────────────────────────────
+
+⭐ QUY TẮC QUAN TRỌNG:
+Stream operators << và >> PHẢI là FRIEND FUNCTIONS, KHÔNG THỂ là member functions!
+
+TẠI SAO?
+- Left operand là stream (cout, cin), không phải object của class
+- Không thể modify class của stream (std::ostream, std::istream)
+- Cần access private members
+
+HÌNH DUNG:
+    cout << obj;
+    
+    // Nếu là member function:
+    cout.operator<<(obj);  // ❌ Không thể! cout là std::ostream
+    
+    // Phải là friend function:
+    operator<<(cout, obj);  // ✓ OK!
+
+10.2. VÍ DỤ CODE TỪ TEST (Test2/on_18.cpp)
+───────────────────────────────────────────
+
+```cpp
+#include <iostream>
+using namespace std;
+
+class Base {
+    int x;
+public:
+    Base(int x = 0) : x(x) {}
+    
+    // ✓ ĐÚNG: Friend function
+    friend ostream& operator<<(ostream& o, Base obj) {
+        o << obj.x;
+        return o;
+    }
+};
+
+int main() {
+    Base obj(42);
+    cout << obj;  // Output: 42
+}
+```
+
+PHÂN TÍCH:
+──────────
+1. cout << obj:
+   - Gọi operator<<(cout, obj)
+   - o là reference đến cout
+   - obj là object cần in
+   - o << obj.x in giá trị x
+   - Return o để chain
+
+2. Chaining:
+   cout << obj1 << obj2 << obj3;
+   // operator<<(operator<<(operator<<(cout, obj1), obj2), obj3)
+
+10.3. RETURN STREAM& ĐỂ CHAIN
+──────────────────────────────
+
+⭐ QUY TẮC:
+Stream operators PHẢI return stream& để chain được.
+
+VÍ DỤ ĐẦY ĐỦ:
+```cpp
+class Point {
+    int x, y;
+public:
+    Point(int x = 0, int y = 0) : x(x), y(y) {}
+    
+    // operator<< (output)
+    friend ostream& operator<<(ostream& os, const Point& p) {
+        os << "(" << p.x << ", " << p.y << ")";
+        return os;  // ✓ Return reference!
+    }
+    
+    // operator>> (input)
+    friend istream& operator>>(istream& is, Point& p) {
+        is >> p.x >> p.y;
+        return is;  // ✓ Return reference!
+    }
+};
+
+int main() {
+    Point p1, p2, p3;
+    
+    // Input chaining:
+    cin >> p1 >> p2 >> p3;
+    
+    // Output chaining:
+    cout << p1 << " " << p2 << " " << p3 << endl;
+}
+```
+
+10.4. LỖI THƯỜNG GẶP
+────────────────────
+
+❌ LỖI 1: Làm member function
+```cpp
+class MyClass {
+public:
+    ostream& operator<<(ostream& os) {  // ❌ SAI!
+        os << value;
+        return os;
+    }
+};
+
+// Gọi: obj << cout;  // ❌ Ngược!
+```
+
+❌ LỖI 2: Không return reference
+```cpp
+friend ostream operator<<(ostream& os, const MyClass& obj) {  // ❌ SAI!
+    os << obj.value;
+    return os;  // ❌ Return by value, không chain được
+}
+```
+
+❌ LỖI 3: Return void
+```cpp
+friend void operator<<(ostream& os, const MyClass& obj) {  // ❌ SAI!
+    os << obj.value;
+    // ❌ Không return, không chain được
+}
+```
+
+✓ ĐÚNG:
+```cpp
+friend ostream& operator<<(ostream& os, const MyClass& obj) {
+    os << obj.value;
+    return os;  // ✓ Return reference
+}
+```
+
+═══════════════════════════════════════════════════════════════════════════════
+CHAPTER 11: COMPARISON OPERATORS (==, !=, <, >, <=, >=)
+═══════════════════════════════════════════════════════════════════════════════
+
+11.1. IMPLEMENT == VÀ <
+───────────────────────
+
+BEST PRACTICE:
+Chỉ cần implement == và <, các operators khác derive từ chúng.
+
+VÍ DỤ:
+```cpp
+class Point {
+    int x, y;
+public:
+    Point(int x = 0, int y = 0) : x(x), y(y) {}
+    
+    // Implement == trước
+    bool operator==(const Point& other) const {
+        return x == other.x && y == other.y;
+    }
+    
+    // Derive != từ ==
+    bool operator!=(const Point& other) const {
+        return !(*this == other);
+    }
+    
+    // Implement < trước
+    bool operator<(const Point& other) const {
+        if (x != other.x) return x < other.x;
+        return y < other.y;
+    }
+    
+    // Derive các operators khác từ <
+    bool operator>(const Point& other) const {
+        return other < *this;
+    }
+    
+    bool operator<=(const Point& other) const {
+        return !(other < *this);
+    }
+    
+    bool operator>=(const Point& other) const {
+        return !(*this < other);
+    }
+};
+```
+
+11.2. CONST-CORRECTNESS
+───────────────────────
+
+⭐ QUAN TRỌNG:
+Comparison operators PHẢI là const member functions!
+
+```cpp
+bool operator==(const Point& other) const {  // ✓ const
+    return x == other.x && y == other.y;
+}
+```
+
+TẠI SAO?
+- Không modify object
+- Cho phép compare const objects
+
+═══════════════════════════════════════════════════════════════════════════════
+CHAPTER 12: SUBSCRIPT OPERATOR ([])
+═══════════════════════════════════════════════════════════════════════════════
+
+12.1. PHẢI LÀ MEMBER FUNCTION
+──────────────────────────────
+
+⭐ QUY TẮC:
+operator[] PHẢI là member function, KHÔNG THỂ là friend!
+
+12.2. RETURN REFERENCE ĐỂ GÁN ĐƯỢC (Test2/on_24.cpp)
+─────────────────────────────────────────────────────
+
+```cpp
+#include <iostream>
+using namespace std;
+
+const int SIZE = 10;
+
+class Exam {
+    int arr[SIZE];
+public:
+    Exam();
+    ~Exam() {}
+    int& operator[](const int& index);  // ✓ Return reference!
+};
+
+Exam::Exam() {
+    for (int i = 0; i < SIZE; ++i) {
+        this->arr[i] = i;
+    }
+}
+
+int& Exam::operator[](const int& index) {
+    static int temp = 0;        // Trả về khi vượt biên
+    if (index > SIZE) {         // Chú ý: > SIZE, không phải >=
+        return temp;
+    }
+    return this->arr[index];    // ✓ Return reference!
+}
+
+int main() {
+    Exam obj;
+    cout << obj[5] << obj[12];  // Output: 50
+    
+    // Vì return reference, có thể gán:
+    obj[3] = 100;  // ✓ OK!
+    cout << obj[3];  // 100
+}
+```
+
+PHÂN TÍCH:
+──────────
+1. obj[5]:
+   - index = 5 < SIZE (10) → OK
+   - Return arr[5] = 5
+   
+2. obj[12]:
+   - index = 12 > SIZE (10) → Vượt biên
+   - Return temp = 0
+   
+3. Output: 50
+
+LẠI SAO RETURN REFERENCE?
+- Để có thể gán: obj[i] = value
+- Nếu return by value → obj[i] = value không có hiệu lực
+
+12.3. 2 VERSIONS: CONST VÀ NON-CONST
+─────────────────────────────────────
+
+BEST PRACTICE:
+Implement 2 versions của operator[]
+
+```cpp
+class Array {
+    int* data;
+    int size;
+public:
+    Array(int s) : size(s) {
+        data = new int[size];
+    }
+    
+    ~Array() {
+        delete[] data;
+    }
+    
+    // Non-const version (có thể modify)
+    int& operator[](int index) {
+        if (index < 0 || index >= size) {
+            throw out_of_range("Index out of bounds");
+        }
+        return data[index];
+    }
+    
+    // Const version (chỉ đọc)
+    const int& operator[](int index) const {
+        if (index < 0 || index >= size) {
+            throw out_of_range("Index out of bounds");
+        }
+        return data[index];
+    }
+};
+
+int main() {
+    Array arr(10);
+    arr[5] = 42;  // ✓ Non-const version
+    
+    const Array const_arr(10);
+    int x = const_arr[5];  // ✓ Const version
+    // const_arr[5] = 42;  // ❌ ERROR: const
+}
+```
+
+12.4. BOUNDS CHECKING
+─────────────────────
+
+✓ AN TOÀN:
+```cpp
+int& operator[](int index) {
+    if (index < 0 || index >= size) {
+        throw out_of_range("Index out of bounds");
+    }
+    return data[index];
+}
+```
+
+═══════════════════════════════════════════════════════════════════════════════
+CHAPTER 13: FUNCTION CALL OPERATOR (())
+═══════════════════════════════════════════════════════════════════════════════
+
+13.1. FUNCTORS - FUNCTION OBJECTS (Test2/on_3.cpp)
+───────────────────────────────────────────────────
+
+KHÁI NIỆM:
+Functor là object có thể gọi như function (overload operator()).
+
+VÍ DỤ TỪ TEST:
+```cpp
+#include<iostream>
+using namespace std;
+
+class Exam {
+public:
+    void operator()(int);
+};
+
+void Exam::operator()(int var_i) {
+    cout << var_i;
+}
+
+int main(){
+    Exam obj;
+    obj(5);  // Gọi như function! Output: 5
+    return 0;
+}
+```
+
+PHÂN TÍCH:
+──────────
+1. obj(5):
+   - Gọi obj.operator()(5)
+   - var_i = 5
+   - In ra 5
+
+2. Object hoạt động như function!
+
+13.2. ỨNG DỤNG TRONG STL
+────────────────────────
+
+VÍ DỤ THỰC TẾ:
+```cpp
+#include <algorithm>
+#include <vector>
+using namespace std;
+
+// Functor để so sánh
+class Compare {
+public:
+    bool operator()(int a, int b) const {
+        return a > b;  // Descending order
+    }
+};
+
+int main() {
+    vector<int> vec = {3, 1, 4, 1, 5};
+    
+    // Dùng functor với STL
+    sort(vec.begin(), vec.end(), Compare());
+    // vec: {5, 4, 3, 1, 1}
+}
+```
+
+VÍ DỤ VỚI STATE:
+```cpp
+class Accumulator {
+    int sum;
+public:
+    Accumulator() : sum(0) {}
+    
+    void operator()(int value) {
+        sum += value;
+    }
+    
+    int getSum() const { return sum; }
+};
+
+int main() {
+    Accumulator acc;
+    acc(10);
+    acc(20);
+    acc(30);
+    cout << acc.getSum();  // 60
+}
+```
+
+═══════════════════════════════════════════════════════════════════════════════
+CHAPTER 14: ASSIGNMENT OPERATOR (=)
+═══════════════════════════════════════════════════════════════════════════════
+
+14.1. PHẢI LÀ MEMBER FUNCTION
+──────────────────────────────
+
+⭐ QUY TẮC:
+operator= PHẢI là member function, KHÔNG THỂ là friend!
+
+14.2. SELF-ASSIGNMENT CHECK (Test2/on_8.cpp)
+─────────────────────────────────────────────
+
+VÍ DỤ TỪ TEST:
+```cpp
+#include<iostream>
+using namespace std;
+
+class Exam {
+    int prop;
+public:
+    Exam(int = 1);
+    Exam(const Exam&);
+    ~Exam();
+    const Exam& operator=(const Exam&);
+};
+
+Exam::Exam(int prop) : prop(prop) {
+    cout << "1";
+}
+
+Exam::Exam(Exam const& obj) : prop(obj.prop) {
+    cout << "2";
+}
+
+Exam::~Exam() {}
+
+const Exam& Exam::operator=(Exam const& obj) {
+    if (this != &obj) {  // ⭐ Self-assignment check!
+        this->prop = obj.prop;
+        cout << "3";
+    }
+    return *this;
+}
+
+Exam Func() {
+    Exam obj;   // Constructor: "1"
+    return obj; // Return by value
+}
+
+int main() {
+    Exam obj;       // Constructor: "1"
+    obj = Func();   // Func() tạo obj, return, gán
+                    // Output: "113"
+    return 0;
+}
+```
+
+PHÂN TÍCH OUTPUT:
+─────────────────
+1. "1": Exam obj trong main() - Constructor
+2. "1": Exam obj trong Func() - Constructor
+3. "3": obj = Func() - Assignment operator
+
+⭐ TẠI SAO CẦN SELF-ASSIGNMENT CHECK?
+```cpp
+MyClass obj;
+obj = obj;  // Self-assignment!
+
+// Nếu không check:
+// 1. Delete old data (obj's data)
+// 2. Copy from obj (nhưng đã delete rồi!) → ❌ CRASH!
+
+// Với check:
+if (this != &obj) {
+    // Chỉ thực hiện khi không phải self-assignment
+}
+```
+
+14.3. RETURN *this
+──────────────────
+
+⭐ QUY TẮC:
+operator= PHẢI return reference đến *this để chain được.
+
+VÍ DỤ:
+```cpp
+const MyClass& operator=(const MyClass& other) {
+    if (this != &other) {
+        // Deep copy
+    }
+    return *this;  // ✓ Return *this
+}
+
+// Chaining:
+a = b = c;
+// b.operator=(c); a.operator=(b);
+```
+
+14.4. DEEP COPY
+───────────────
+
+VÍ DỤ ĐẦY ĐỦ:
+```cpp
+class MyString {
+    char* data;
+    int length;
+public:
+    MyString(const char* str = "") {
+        length = strlen(str);
+        data = new char[length + 1];
+        strcpy(data, str);
+    }
+    
+    ~MyString() {
+        delete[] data;
+    }
+    
+    // Assignment operator với deep copy
+    MyString& operator=(const MyString& other) {
+        // 1. Self-assignment check
+        if (this != &other) {
+            // 2. Delete old data
+            delete[] data;
+            
+            // 3. Deep copy new data
+            length = other.length;
+            data = new char[length + 1];
+            strcpy(data, other.data);
+        }
+        
+        // 4. Return *this
+        return *this;
+    }
+};
+```
+
+═══════════════════════════════════════════════════════════════════════════════
+CHAPTER 15: SPECIAL OPERATORS
+═══════════════════════════════════════════════════════════════════════════════
+
+15.1. COMMA OPERATOR (,)
+────────────────────────
+
+VÍ DỤ:
+```cpp
+class MyClass {
+    int value;
+public:
+    MyClass(int v = 0) : value(v) {}
+    
+    MyClass operator,(const MyClass& other) {
+        return other;  // Return right operand
+    }
+    
+    void print() { cout << value << endl; }
+};
+
+int main() {
+    MyClass a(1), b(2), c(3);
+    MyClass result = (a, b, c);  // result = c
+    result.print();  // 3
+}
+```
+
+15.2. TYPE CONVERSION OPERATORS
+────────────────────────────────
+
+VÍ DỤ:
+```cpp
+class MyInt {
+    int value;
+public:
+    MyInt(int v = 0) : value(v) {}
+    
+    // Conversion to int
+    operator int() const {
+        return value;
+    }
+    
+    // Conversion to double
+    operator double() const {
+        return static_cast<double>(value);
+    }
+};
+
+int main() {
+    MyInt obj(42);
+    
+    int i = obj;     // Implicit conversion to int
+    double d = obj;  // Implicit conversion to double
+    
+    cout << i << " " << d;  // 42 42
+}
+```
+
+═══════════════════════════════════════════════════════════════════════════════
+CHAPTER 16: FUNCTION OVERLOADING
+═══════════════════════════════════════════════════════════════════════════════
+
+16.1. OVERLOAD RESOLUTION
+─────────────────────────
+
+QUY TẮC:
+Compiler chọn function tốt nhất dựa trên:
+1. Exact match (tốt nhất)
+2. Promotion (char → int, float → double)
+3. Standard conversion (int → double)
+4. User-defined conversion
+
+VÍ DỤ:
+```cpp
+void func(int x) { cout << "int"; }
+void func(double x) { cout << "double"; }
+void func(char x) { cout << "char"; }
+
+func(10);      // "int" - Exact match
+func(10.5);    // "double" - Exact match
+func('a');     // "char" - Exact match
+func(10.5f);   // "double" - Promotion (float → double)
+```
+
+16.2. AMBIGUITY VỚI DEFAULT PARAMETERS (Test2/on_1.cpp)
+────────────────────────────────────────────────────────
+
+ĐÃ PHÂN TÍCH Ở PHẦN I - CHAPTER 4.3
+
+═══════════════════════════════════════════════════════════════════════════════
+CHAPTER 17: CONST-CORRECTNESS ⭐ CỰC KỲ QUAN TRỌNG
+═══════════════════════════════════════════════════════════════════════════════
+
+17.1. CONST MEMBER FUNCTION
+───────────────────────────
+
+⭐ QUY TẮC:
+Member functions KHÔNG modify object PHẢI là const!
+
+VÍ DỤ:
+```cpp
+class Point {
+    int x, y;
+public:
+    Point(int x = 0, int y = 0) : x(x), y(y) {}
+    
+    // ✓ Const: Không modify
+    int getX() const { return x; }
+    int getY() const { return y; }
+    void print() const { cout << x << ", " << y; }
+    
+    // Non-const: Modify object
+    void setX(int newX) { x = newX; }
+    void setY(int newY) { y = newY; }
+};
+```
+
+17.2. CONST PARAMETERS
+──────────────────────
+
+✓ DÙNG const& CHO PARAMETERS KHÔNG MODIFY:
+```cpp
+class MyClass {
+public:
+    // ✓ const parameter
+    MyClass operator+(const MyClass& other) const {
+        // ...
+    }
+    
+    // ✓ const parameter
+    bool operator==(const MyClass& other) const {
+        // ...
+    }
+};
+```
+
+17.3. CHECKLIST
+───────────────
+
+□ Getters: const member functions
+□ Comparison operators: const member functions
+□ Stream operators: const parameters
+□ Arithmetic operators: const parameters, const member functions
+□ operator[]: 2 versions (const và non-const)
+
+═══════════════════════════════════════════════════════════════════════════════
+
+🎯 TỔNG KẾT PHẦN II: OPERATOR OVERLOADING
+════════════════════════════════════════
+
+CHECKLIST QUAN TRỌNG:
+□ =, [], (), -> PHẢI là member functions
+□ <<, >> PHẢI là friend functions
+□ Arithmetic (+, -, *, /) return BY VALUE
+□ Compound (+=, -=, *=, /=) return REFERENCE
+□ Stream operators return stream&
+□ operator= cần self-assignment check
+□ operator= cần deep copy với dynamic memory
+□ Comparison operators nên là const
+□ operator[] return reference để gán được
+□ operator[] nên có 2 versions (const và non-const)
+
+ĐÃ HỌC TỪ CODE TEST:
+✓ Test2/on_1.cpp: Ambiguity với overloading + default
+✓ Test2/on_3.cpp: Function call operator (functors)
+✓ Test2/on_8.cpp: Assignment operator với self-check
+✓ Test2/on_18.cpp: Arithmetic và stream operators
+✓ Test2/on_24.cpp: Subscript operator return reference
+
+═══════════════════════════════════════════════════════════════════════════════
+
+TIẾP TỤC VỚI PHẦN III: INHERITANCE & POLYMORPHISM
+Xem file Part3_Inheritance_Polymorphism.txt
+
+════════════════════════════════════════════════════════════════════════════════

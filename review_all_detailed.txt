@@ -1,0 +1,1343 @@
+================================================================================
+                    TÀI LIỆU ÔN TẬP OOP - TỔNG HỢP CHI TIẾT
+              C++ OBJECT-ORIENTED PROGRAMMING - COMPLETE GUIDE
+================================================================================
+
+                        TOÀN BỘ KIẾN THỨC OOP C++ - PHIÊN BẢN ĐẦY ĐỦ
+              Tổng hợp chi tiết từ Test 1, Test 2, Giữa Kì, và Test 3
+              
+              Format: Khái niệm → Lưu ý → Ví dụ code thực tế → Lỗi thường gặp
+
+================================================================================
+
+⭐ LƯU Ý KHI ĐỌC TÀI LIỆU NÀY:
+- Mỗi section có: Khái niệm cơ bản → Lưu ý quan trọng → Ví dụ từ code test
+- Code examples được lấy từ các file test thực tế
+- Phân tích chi tiết output và cách hoạt động
+- Lỗi thường gặp được đánh dấu ❌
+- Best practices được đánh dấu ✓
+
+================================================================================
+
+MỤC LỤC CHI TIẾT
+================
+
+📚 PHẦN I: C++ FUNDAMENTALS (Test 1)
+────────────────────────────────────
+    1. REFERENCES (THAM CHIẾU)
+       1.1. Khái niệm cơ bản & Syntax
+       1.2. Reference binding & Lưu ý
+       1.3. Ví dụ code thực tế (Test1/on_1.cpp)
+       1.4. Const reference
+       1.5. Dangling reference - Lỗi nguy hiểm
+       
+    2. POINTERS (CON TRỎ)
+       2.1. Khái niệm & Toán tử *, &
+       2.2. Null pointer
+       2.3. Pointer arithmetic
+       2.4. Reference vs Pointer - So sánh chi tiết
+       
+    3. SIZEOF OPERATOR ⭐ QUAN TRỌNG
+       3.1. Khái niệm cơ bản
+       3.2. sizeof KHÔNG có side effects (Test1/on_44.cpp)
+       3.3. sizeof với array
+       3.4. Array decay - Lỗi cực kỳ thường gặp
+       3.5. sizeof với pointer
+       3.6. sizeof với class/struct (padding)
+       
+    4. DEFAULT PARAMETERS
+       4.1. Khái niệm & Cú pháp
+       4.2. Quy tắc vàng: Default phải ở cuối
+       4.3. Ambiguity với function overloading (Test2/on_1.cpp)
+       
+    5. PASS BY VALUE/REFERENCE/POINTER
+       5.1. Pass by value
+       5.2. Pass by reference
+       5.3. Pass by pointer
+       5.4. Bảng quyết định khi nào dùng cái gì
+       
+    6. TYPE CONVERSION
+       6.1. Implicit conversion
+       6.2. Type promotion hierarchy
+       6.3. Explicit cast
+
+📚 PHẦN II: OPERATOR OVERLOADING (Test 2)
+────────────────────────────────────────
+    7. OPERATOR OVERLOADING CƠ BẢN
+       7.1. Khái niệm & Mục đích
+       7.2. Member function syntax
+       7.3. Friend function syntax
+       7.4. Khi nào dùng member, khi nào dùng friend
+       
+    8. ARITHMETIC OPERATORS (+, -, *, /)
+       8.1. Khái niệm & Return type
+       8.2. Ví dụ code (Test2/on_15.cpp, on_18.cpp)
+       8.3. operator+ return by value
+       8.4. Lỗi thường gặp: Return type sai
+       
+    9. COMPOUND ASSIGNMENT (+=, -=, *=, /=)
+       9.1. Khái niệm & Return reference
+       9.2. Cho phép chain: a += b += c
+       9.3. Implement operator+ bằng operator+=
+       
+    10. STREAM OPERATORS (<<, >>)
+        10.1. Tại sao PHẢI là friend function
+        10.2. Ví dụ code chi tiết (Test2/on_18.cpp)
+        10.3. Return stream& để chain
+        10.4. Lỗi: Làm member function
+        
+    11. COMPARISON OPERATORS (==, !=, <, >, <=, >=)
+        11.1. Implement == và <
+        11.2. Derive các toán tử khác
+        11.3. const-correctness
+        
+    12. SUBSCRIPT OPERATOR ([])
+        12.1. PHẢI là member function
+        12.2. Return reference để gán được (Test2/on_24.cpp)
+        12.3. 2 versions: const và non-const
+        12.4. Bounds checking
+        
+    13. FUNCTION CALL OPERATOR (())
+        13.1. Functors - Function objects (Test2/on_3.cpp)
+        13.2. Ứng dụng trong STL
+        
+    14. ASSIGNMENT OPERATOR (=)
+        14.1. PHẢI là member function
+        14.2. Self-assignment check (Test2/on_8.cpp)
+        14.3. Return *this
+        14.4. Deep copy
+        
+    15. SPECIAL OPERATORS
+        15.1. new & delete overloading (Test2/on_13.cpp)
+        15.2. Type conversion operators (Test2/on_26.cpp)
+        15.3. Comma operator (Test2/on_5.cpp)
+        
+    16. FUNCTION OVERLOADING
+        16.1. Overload resolution
+        16.2. Ambiguity với default parameters (Test2/on_1.cpp)
+        16.3. Type promotion trong overloading
+        
+    17. CONST-CORRECTNESS ⭐ CỰC KỲ QUAN TRỌNG
+        17.1. Const member function
+        17.2. Const parameters
+        17.3. Const return type
+        17.4. Checklist
+
+📚 PHẦN III: INHERITANCE & POLYMORPHISM (Giữa Kì + Test 3)
+────────────────────────────────────────────────────────
+    18. KẾ THỪA ĐƠN (SINGLE INHERITANCE)
+        18.1. Khái niệm IS-A relationship
+        18.2. Public/Protected/Private inheritance
+        18.3. Ví dụ code chi tiết (Gki/test.cpp)
+        
+    19. CONSTRUCTOR & DESTRUCTOR ORDER ⭐ THEN CHỐT
+        19.1. Quy tắc vàng: Cha → Con, ~Con → ~Cha
+        19.2. Ví dụ code (Test3/on_2.cpp, on_23.cpp)
+        19.3. Phân tích chi tiết từng bước
+        19.4. Multiple inheritance order
+        
+    20. INITIALIZER LIST
+        20.1. Khái niệm & Syntax
+        20.2. Gọi base constructor (Test3/on_5.cpp)
+        20.3. Lỗi: Không gọi base constructor
+        20.4. Thứ tự khởi tạo
+        
+    21. NAME HIDING & FUNCTION HIDING
+        21.1. Name hiding trong inheritance (Test3/on_9.cpp)
+        21.2. Function hiding (Test3/on_41.cpp)
+        21.3. using directive để expose
+        
+    22. VIRTUAL DESTRUCTOR ⭐ CỰC KỲ QUAN TRỌNG
+        22.1. Tại sao cần virtual destructor
+        22.2. Memory leak khi không có virtual
+        22.3. Ví dụ code (Gki/test3.cpp)
+        22.4. Quy tắc: Base class → virtual destructor
+        
+    23. VIRTUAL FUNCTIONS
+        23.1. Khái niệm dynamic binding
+        23.2. Override keyword
+        23.3. Virtual function table (vtable)
+        23.4. Ví dụ code (Gki/test4.cpp)
+        
+    24. PURE VIRTUAL & ABSTRACT CLASSES
+        24.1. Pure virtual function (= 0)
+        24.2. Abstract class - Không thể instantiate
+        24.3. Interface pattern
+        24.4. Concrete class implementation
+        
+    25. POLYMORPHISM
+        25.1. Compile-time polymorphism (static)
+        25.2. Runtime polymorphism (dynamic)
+        25.3. Upcasting (an toàn)
+        25.4. Downcasting (dynamic_cast)
+        
+    26. SLICING PROBLEM ⭐ LỖI THƯỜNG GẶP
+        26.1. Khái niệm slicing
+        26.2. Ví dụ code minh họa
+        26.3. Giải pháp: Pass by reference/pointer
+        
+    27. ĐA KẾ THỪA (MULTIPLE INHERITANCE)
+        27.1. Khái niệm & Syntax
+        27.2. Constructor/Destructor order
+        27.3. Diamond problem
+        27.4. Virtual inheritance
+        
+    28. OPERATOR OVERLOADING VỚI INHERITANCE
+        28.1. Kế thừa operators
+        28.2. Override operators cho derived class
+        28.3. Gọi base class operator
+        28.4. Stream operators với inheritance
+
+📚 PHẦN IV: ADVANCED CONCEPTS (Test 3)
+────────────────────────────────────
+    29. TEMPLATES (FUNCTION & CLASS)
+        29.1. Function templates
+        29.2. Class templates
+        29.3. Template specialization
+        29.4. Non-type template parameters
+        29.5. Variadic templates
+        
+    30. EXCEPTION HANDLING
+        30.1. try-catch-throw
+        30.2. Exception hierarchy
+        30.3. noexcept
+        30.4. Rethrow
+        30.5. RAII pattern
+        
+    31. COPY CONTROL ⭐ RULE OF THREE/FIVE/ZERO
+        31.1. Rule of Three
+        31.2. Deep copy vs Shallow copy
+        31.3. Copy constructor (Test2/on_8.cpp)
+        31.4. Copy assignment operator
+        31.5. Rule of Five (C++11)
+        31.6. Move semantics
+        31.7. Copy-and-swap idiom
+        
+    32. STATIC MEMBERS
+        32.1. Static data members
+        32.2. Static member functions
+        32.3. Static local variables
+        32.4. Static với inheritance
+        
+    33. FRIEND FUNCTIONS & CLASSES
+        33.1. Friend function
+        33.2. Friend class
+        33.3. Khi nào dùng friend
+        
+    34. DESIGN PATTERNS
+        34.1. Singleton
+        34.2. Factory
+        34.3. Observer
+        34.4. Strategy
+
+📚 PHẦN V: TỔNG HỢP & THỰC HÀNH
+─────────────────────────────────
+    35. CÁC LỖI THƯỜNG GẶP (TOP 20)
+    36. BEST PRACTICES
+    37. CHECKLIST TỔNG HỢP
+    38. DEBUGGING TECHNIQUES
+    39. PERFORMANCE TIPS
+    40. COMPILATION & TOOLS
+
+================================================================================
+                         PHẦN I: C++ FUNDAMENTALS
+================================================================================
+
+═══════════════════════════════════════════════════════════════════════════════
+CHAPTER 1: REFERENCES (THAM CHIẾU)
+═══════════════════════════════════════════════════════════════════════════════
+
+1.1. KHÁI NIỆM CƠ BẢN
+──────────────────────
+
+ĐỊNH NGHĨA:
+Reference (tham chiếu) là một ALIAS (bí danh) cho một biến đã tồn tại.
+Nó KHÔNG phải là một object mới, mà chỉ là "tên khác" của biến gốc.
+
+CÚ PHÁP:
+    int x = 10;
+    int& ref = x;  // ref là bí danh của x
+    
+    ref = 20;      // Thay đổi ref = thay đổi x
+    cout << x;     // 20
+
+HÌNH DUNG:
+    Biến gốc: [x: 10] ← Địa chỉ 0x1000
+    Reference: [ref] → Cũng trỏ đến 0x1000
+    
+    Khi thay đổi ref → Thay đổi trực tiếp x
+
+ĐẶC ĐIỂM QUAN TRỌNG:
+✓ PHẢI khởi tạo ngay khi khai báo
+  int& ref;  // ❌ ERROR! Phải khởi tạo
+  
+✓ KHÔNG THỂ thay đổi target (re-bind) sau khi khởi tạo
+  int x = 10, y = 20;
+  int& ref = x;
+  ref = y;  // Gán giá trị y cho x, KHÔNG phải ref trỏ sang y
+  
+✓ KHÔNG có null reference
+  int& ref = nullptr;  // ❌ ERROR!
+  
+✓ KHÔNG chiếm thêm memory (compiler optimization)
+  sizeof(ref) == sizeof(int), không có overhead
+
+1.2. VÍ DỤ CODE THỰC TẾ
+────────────────────────
+
+VÍ DỤ TỪ TEST (Test1/on_1.cpp):
+═══════════════════════════════
+```cpp
+#include <iostream>
+using namespace std;
+
+int main(){
+    int var_x = 2, var_y = 6;
+    int& ref_x = var_x;  // ref_x là alias của var_x
+    int& ref_y = var_y;  // ref_y là alias của var_y
+
+    // Test 1: Tăng biến gốc
+    var_x++;
+    cout << var_x << " " << ref_x << endl;  // 3 3
+    
+    // Test 2: Tăng reference
+    ref_x++;
+    cout << var_x << " " << ref_x << endl;  // 4 4
+    
+    // Test 3: Phép gán phức tạp
+    var_x = ref_x++; 
+    cout << var_x << " " << ref_x << endl;  // 4 4
+    
+    return 0;
+}
+```
+
+PHÂN TÍCH CHI TIẾT:
+═══════════════════
+
+Ban đầu:
+    var_x = 2, ref_x → var_x
+
+Test 1: var_x++
+    var_x = 3, ref_x = 3 (cùng biến)
+    Output: 3 3 ✓
+
+Test 2: ref_x++
+    ref_x tăng = var_x tăng
+    var_x = 4, ref_x = 4
+    Output: 4 4 ✓
+
+Test 3: var_x = ref_x++
+    Phép gán có thứ tự:
+    1. Tính ref_x++ (postfix)
+       - Trả về giá trị CŨ: 4
+       - Tăng sau: ref_x = 5 (var_x = 5)
+    2. Gán: var_x = 4
+    
+    Kết quả:
+    - var_x = 4 (giá trị cũ của ref_x)
+    - ref_x = var_x = 4 (vì ref_x là alias của var_x)
+    
+    ❓ Tại sao không phải 4 5?
+    → Vì sau khi ref_x++ (ref_x/var_x = 5)
+    → var_x = 4 gán lại, ghi đè lên giá trị 5
+    → Cả var_x và ref_x đều = 4
+    
+    Output: 4 4 ✓ (KHÔNG phải 4 5!)
+
+LƯU Ý QUAN TRỌNG:
+─────────────────
+Reference KHÔNG THỂ re-bind (đổi target):
+    int x = 10, y = 20;
+    int& ref = x;  // ref → x
+    ref = y;       // GÁN GIÁ TRỊ y cho x, KHÔNG phải ref → y
+    
+    cout << x;     // 20 (x đã đổi)
+    cout << ref;   // 20 (ref vẫn → x)
+
+1.3. CONST REFERENCE
+────────────────────
+
+KHÁI NIỆM:
+Const reference cho phép truy cập biến mà KHÔNG thay đổi giá trị.
+
+CÚ PHÁP:
+    void print(const int& x) {
+        cout << x;      // ✓ OK: đọc được
+        // x = 10;      // ❌ ERROR: không thể thay đổi
+    }
+
+VÍ DỤ VỚI CLASS:
+    class BigData {
+        int data[10000];
+    public:
+        // ...
+    };
+    
+    // ❌ SAI: Pass by value → Copy 10000 phần tử!
+    void process(BigData obj) {
+        cout << obj.data[0];
+    }
+    
+    // ✓ ĐÚNG: Pass by const reference → Không copy, không đổi
+    void process(const BigData& obj) {
+        cout << obj.data[0];  // ✓ Đọc OK
+        // obj.data[0] = 5;   // ❌ ERROR: const
+    }
+
+ƯU ĐIỂM:
+✓ KHÔNG copy → Efficient (tiết kiệm memory & time)
+✓ KHÔNG thay đổi → Safe (clear intent)
+✓ CÓ THỂ nhận temporary/rvalue
+✓ Self-documenting code (rõ ý nghĩa)
+
+VÍ DỤ NHẬN TEMPORARY:
+    void print(const int& x) {
+        cout << x;
+    }
+    
+    int val = 5;
+    print(val);      // ✓ OK: Bind với lvalue
+    print(10);       // ✓ OK: Bind với rvalue (temporary)
+    print(3 + 4);    // ✓ OK: Bind với expression result
+    
+    // Non-const reference không bind được rvalue:
+    void modify(int& x) {
+        x++;
+    }
+    
+    modify(10);      // ❌ ERROR: Cannot bind rvalue to non-const reference
+
+BEST PRACTICE:
+═════════════
+→ Dùng const reference cho parameters lớn chỉ đọc
+→ Dùng reference cho parameters cần modify
+→ Dùng value cho small types (int, char, bool)
+
+Quy tắc ngón tay cái:
+    sizeof(type) <= sizeof(pointer) → Pass by value
+    sizeof(type) > sizeof(pointer)  → Pass by const reference
+
+1.4. DANGLING REFERENCE - LỖI NGUY HIỂM
+────────────────────────────────────────
+
+KHÁI NIỆM:
+Dangling reference xảy ra khi reference trỏ đến biến đã bị hủy.
+
+❌ LỖI CỰC KỲ NGUY HIỂM:
+    int& getReference() {
+        int x = 10;        // Local variable
+        return x;          // ❌ NGUY HIỂM! x bị hủy sau khi return
+    }
+    
+    int main() {
+        int& ref = getReference();
+        cout << ref;       // ⚠️ UNDEFINED BEHAVIOR!
+        // ref trỏ đến memory đã bị deallocate
+    }
+
+TẠI SAO NGUY HIỂM?
+- Local variable x tồn tại trên stack
+- Khi function return, stack frame bị hủy
+- x không còn tồn tại
+- ref trỏ đến "vùng rác" (garbage memory)
+- Mọi thao tác với ref → Crash hoặc behavior không xác định
+
+HÌNH DUNG:
+    Stack trước return:
+    ┌──────────────────┐
+    │ getReference()   │
+    │   x = 10   ←─────┼─ ref trỏ đến đây
+    └──────────────────┘
+    
+    Stack sau return:
+    ┌──────────────────┐
+    │ main()           │
+    │   ref ──→  ???   │← Trỏ đến vùng đã bị deallocate
+    └──────────────────┘
+
+QUY TẮC AN TOÀN:
+═══════════════
+
+❌ KHÔNG return reference đến:
+   - Local variable
+   - Temporary object
+   - Deleted memory
+   - Parameter passed by value
+
+✓ CÓ THỂ return reference đến:
+   - Static variable
+   - Global variable
+   - Member variable (nếu object tồn tại)
+   - Parameter passed by reference (nếu chắc tồn tại)
+
+VÍ DỤ AN TOÀN:
+```cpp
+// ✓ Static variable - OK
+int& getStatic() {
+    static int x = 10;  // Static → tồn tại sau return
+    return x;
+}
+
+// ✓ Member variable - OK
+class MyClass {
+    int value;
+public:
+    int& getValue() {
+        return value;  // OK: value tồn tại trong object
+    }
+};
+
+// ✓ Parameter reference - OK
+int& max(int& a, int& b) {
+    return (a > b) ? a : b;  // OK: a, b tồn tại ngoài function
+}
+
+int main() {
+    int x = 10, y = 20;
+    int& larger = max(x, y);  // OK: trỏ đến y
+    larger = 30;              // y = 30
+}
+```
+
+═══════════════════════════════════════════════════════════════════════════════
+CHAPTER 2: POINTERS (CON TRỎ)
+═══════════════════════════════════════════════════════════════════════════════
+
+2.1. KHÁI NIỆM CƠ BẢN
+──────────────────────
+
+ĐỊNH NGHĨA:
+Pointer (con trỏ) là biến lưu trữ ĐỊA CHỈ của biến khác.
+
+CÚ PHÁP:
+    int x = 10;
+    int* ptr = &x;  // ptr lưu địa chỉ của x
+    
+    cout << ptr;    // In địa chỉ (VD: 0x7ffd5b2c3e4c)
+    cout << *ptr;   // In giá trị tại địa chỉ: 10
+    
+    *ptr = 20;      // Thay đổi giá trị x qua pointer
+    cout << x;      // 20
+
+TOÁN TỬ:
+- & : Address-of operator (lấy địa chỉ)
+- * : Dereference operator (lấy giá trị tại địa chỉ)
+
+HÌNH DUNG:
+    Memory:
+    ┌─────────────┬──────────┐
+    │ Address     │ Value    │
+    ├─────────────┼──────────┤
+    │ 0x1000      │ 10       │ ← x
+    │ 0x2000      │ 0x1000   │ ← ptr (lưu địa chỉ của x)
+    └─────────────┴──────────┘
+    
+    &x = 0x1000    (địa chỉ của x)
+    ptr = 0x1000   (giá trị của ptr)
+    *ptr = 10      (giá trị tại địa chỉ ptr trỏ tới)
+
+ĐẶC ĐIỂM QUAN TRỌNG:
+✓ Có thể nullptr (trỏ đến "không đâu")
+✓ Có thể thay đổi target (trỏ sang biến khác)
+✓ Có pointer arithmetic (ptr++, ptr+n)
+✓ Chiếm memory:
+  - 4 bytes trên hệ thống 32-bit
+  - 8 bytes trên hệ thống 64-bit
+
+2.2. NULL POINTER
+─────────────────
+
+NULL POINTER: Pointer không trỏ đến đâu cả.
+
+CÁC CÁCH KHAI BÁO:
+    int* ptr = nullptr;  // ✓ C++11 - Khuyên dùng
+    int* ptr2 = NULL;    // C-style (macro = 0)
+    int* ptr3 = 0;       // Old style
+    
+    if (ptr == nullptr) {
+        cout << "Null pointer";
+    }
+
+TẠI SAO CẦN nullptr?
+- Tránh dereference pointer không hợp lệ → Crash
+- Kiểm tra trước khi dùng
+- Gán nullptr sau delete
+
+❌ LỖI THƯỜNG GẶP:
+```cpp
+int* ptr = nullptr;
+*ptr = 10;  // ❌ CRASH! Dereference null pointer
+```
+
+✓ ĐÚNG:
+```cpp
+int* ptr = nullptr;
+if (ptr != nullptr) {
+    *ptr = 10;  // ✓ An toàn
+}
+```
+
+2.3. POINTER ARITHMETIC
+───────────────────────
+
+Pointer có thể cộng/trừ để truy cập các phần tử kế tiếp.
+
+VÍ DỤ:
+    int arr[5] = {10, 20, 30, 40, 50};
+    int* ptr = arr;  // ptr trỏ đến arr[0]
+    
+    cout << *ptr;       // 10 (arr[0])
+    cout << *(ptr+1);   // 20 (arr[1])
+    cout << *(ptr+2);   // 30 (arr[2])
+    cout << ptr[2];     // 30 (tương đương *(ptr+2))
+    
+    ptr++;              // ptr giờ trỏ đến arr[1]
+    cout << *ptr;       // 20
+
+QUY TẮC:
+- ptr + n → Nhảy n phần tử (n * sizeof(type))
+- ptr++ → Nhảy 1 phần tử
+- ptr - ptr2 → Số phần tử giữa 2 con trỏ
+
+HÌNH DUNG:
+    Array: [10][20][30][40][50]
+            ↑   ↑   ↑   ↑   ↑
+    Addr:  100 104 108 112 116  (giả sử sizeof(int) = 4)
+    
+    ptr = 100
+    ptr + 1 = 104 (không phải 101!)
+    ptr + 2 = 108
+    
+    Compiler tự động nhân với sizeof(type)
+
+VÍ DỤ VỚI CHAR:
+    char str[] = "Hello";
+    char* p = str;
+    
+    p + 1 → Nhảy 1 byte (sizeof(char) = 1)
+    
+    str: ['H']['e']['l']['l']['o']['\0']
+          ↑   ↑
+         100 101
+
+VÍ DỤ VỚI DOUBLE:
+    double arr[3] = {1.1, 2.2, 3.3};
+    double* p = arr;
+    
+    p + 1 → Nhảy 8 bytes (sizeof(double) = 8)
+    
+    arr: [1.1  ][2.2  ][3.3  ]
+          ↑     ↑
+         100   108
+
+2.4. REFERENCE VS POINTER - SO SÁNH CHI TIẾT
+─────────────────────────────────────────────
+
+BẢNG SO SÁNH TOÀN DIỆN:
+┌──────────────────────┬──────────────────────┬────────────────────────┐
+│ ĐẶC ĐIỂM             │ REFERENCE            │ POINTER                │
+├──────────────────────┼──────────────────────┼────────────────────────┤
+│ Khởi tạo             │ BẮT BUỘC ngay        │ Không bắt buộc         │
+│ Null                 │ KHÔNG THỂ            │ Có thể (nullptr)       │
+│ Re-assign (đổi mục)  │ KHÔNG THỂ            │ Có thể                 │
+│ Syntax truy cập      │ Đơn giản (.)         │ Phức tạp (*, ->)       │
+│ Memory overhead      │ Không (optimized)    │ Có (4/8 bytes)         │
+│ Safety               │ An toàn hơn          │ Dễ lỗi hơn             │
+│ Arithmetic           │ Không có             │ Có (ptr++, ptr+n)      │
+│ Levels of indirection│ 1 level              │ Multiple (**, ***)     │
+│ Use case chính       │ Function parameters  │ Dynamic allocation     │
+│ Có thể là member     │ Có (cẩn thận)        │ Có                     │
+└──────────────────────┴──────────────────────┴────────────────────────┘
+
+VÍ DỤ SO SÁNH TRỰC TIẾP:
+```cpp
+int x = 10;
+
+// ═══ REFERENCE ═══
+int& ref = x;    // Phải khởi tạo ngay
+ref = 20;        // x = 20
+
+int y = 40;
+ref = y;         // x = 40 (GÁN GIÁ TRỊ, KHÔNG đổi target)
+cout << x;       // 40
+
+// ═══ POINTER ═══
+int* ptr = &x;   // ptr trỏ đến x
+*ptr = 30;       // x = 30
+
+ptr = &y;        // ptr GIỜ TRỎ SANG y (ĐỔI TARGET)
+*ptr = 50;       // y = 50, x vẫn = 30
+cout << x << " " << y;  // 30 50
+```
+
+PHÂN TÍCH:
+1. Reference:
+   - ref = y: Gán GIÁTRỊ của y cho x
+   - ref VẪN là alias của x
+   - x = 40
+
+2. Pointer:
+   - ptr = &y: ptr ĐỔI TARGET, trỏ sang y
+   - *ptr = 50: Thay đổi y
+   - x không đổi (vẫn 30)
+
+KHI NÀO DÙNG CÁI GÌ?
+═══════════════════
+
+✓ Dùng REFERENCE khi:
+  - Function parameters (read/write)
+  - Return từ function (member variable)
+  - Không cần null
+  - Không cần đổi target
+  - Muốn syntax đơn giản
+
+✓ Dùng POINTER khi:
+  - Dynamic memory allocation (new/delete)
+  - Cần nullptr (optional parameter)
+  - Cần đổi target
+  - Array/Data structures
+  - C-style APIs
+
+VÍ DỤ THỰC TẾ:
+```cpp
+// Reference: Function parameter
+void swap(int& a, int& b) {
+    int temp = a;
+    a = b;
+    b = temp;
+}
+
+// Pointer: Dynamic allocation
+int* arr = new int[100];
+// ... use arr
+delete[] arr;
+
+// Pointer: Optional parameter
+void process(int* optional = nullptr) {
+    if (optional != nullptr) {
+        cout << *optional;
+    }
+}
+
+// Reference: Return member
+class MyClass {
+    int value;
+public:
+    int& getValue() { return value; }
+};
+```
+
+═══════════════════════════════════════════════════════════════════════════════
+CHAPTER 3: SIZEOF OPERATOR ⭐ CỰC KỲ QUAN TRỌNG
+═══════════════════════════════════════════════════════════════════════════════
+
+3.1. KHÁI NIỆM CƠ BẢN
+──────────────────────
+
+ĐỊNH NGHĨA:
+sizeof là operator trả về kích thước (số bytes) của type hoặc variable.
+
+CÚ PHÁP:
+    sizeof(type)
+    sizeof(variable)
+    sizeof variable  // Không cần () với variable
+
+VÍ DỤ CƠ BẢN:
+    cout << sizeof(int);      // 4 (bytes)
+    cout << sizeof(char);     // 1
+    cout << sizeof(double);   // 8
+    cout << sizeof(float);    // 4
+    cout << sizeof(long);     // 4 (32-bit) hoặc 8 (64-bit)
+    cout << sizeof(short);    // 2
+    cout << sizeof(bool);     // 1
+    
+    int x = 10;
+    cout << sizeof(x);        // 4
+    cout << sizeof x;         // 4 (không cần ())
+
+ĐẶC ĐIỂM QUAN TRỌNG:
+✓ sizeof là COMPILE-TIME operator
+  - Kết quả được tính khi compile
+  - KHÔNG phải runtime
+  - Có thể dùng trong constant expressions
+
+✓ Return type là size_t (unsigned integer type)
+
+✓ Đơn vị: BYTES (không phải bits)
+
+LƯU Ý PLATFORM:
+- Kích thước có thể khác trên các hệ thống
+- int: Thường là 4 bytes (32-bit int)
+- long: 4 bytes (32-bit) hoặc 8 bytes (64-bit)
+- pointer: 4 bytes (32-bit) hoặc 8 bytes (64-bit)
+
+3.2. ⭐⭐⭐ ĐIỂM THEN CHỐT: sizeof KHÔNG CÓ SIDE EFFECTS ⭐⭐⭐
+────────────────────────────────────────────────────────────
+
+Đây là điều QUAN TRỌNG NHẤT cần nhớ về sizeof!
+Câu hỏi hay nhất trong exam!
+
+KHÁI NIỆM:
+sizeof KHÔNG thực thi expression, chỉ tính kích thước của TYPE.
+
+VÍ DỤ TỪ TEST (Test1/on_44.cpp - Câu hay bị nhầm nhất):
+═══════════════════════════════════════════════════════
+```cpp
+#include <iostream>
+#include <string>
+using namespace std;
+
+int main(){
+    int x = 5;
+    int y = sizeof(x++);  // sizeof KHÔNG THỰC HIỆN x++
+    
+    cout << x << y;  // 54
+    // x = 5 (KHÔNG đổi!)
+    // y = 4 (sizeof(int))
+    return 0;
+}
+```
+
+PHÂN TÍCH TỪNG BƯỚC:
+═══════════════════
+
+Ban đầu:
+    x = 5
+
+Dòng: int y = sizeof(x++);
+1. sizeof chỉ quan tâm TYPE của x++
+2. x++ có type là int
+3. sizeof(int) = 4
+4. x++ KHÔNG được thực thi!
+5. y = 4
+
+Kết quả cuối:
+    x = 5 (KHÔNG tăng)
+    y = 4 (kích thước int)
+    Output: 54
+
+TẠI SAO KHÔNG THỰC THI?
+────────────────────────
+- sizeof là compile-time operator
+- Compiler chỉ cần biết TYPE, không cần VALUE
+- Expression không được evaluate
+- Tất cả side effects bị bỏ qua
+
+VÍ DỤ KHÁC:
+```cpp
+int a = 10;
+sizeof(a = 100);  // a VẪN LÀ 10, không gán 100
+sizeof(func());   // func() KHÔNG được gọi
+sizeof(a++);      // a KHÔNG tăng
+sizeof(++a);      // a KHÔNG tăng
+sizeof(a = a + 5);// a KHÔNG đổi
+sizeof(a *= 2);   // a KHÔNG đổi
+
+cout << a;  // 10 (không đổi!)
+```
+
+CẤU TRÚC PHỨC TẠP HƠN (Tricky question):
+```cpp
+int x = 5;
+int y = sizeof(x = sizeof(x++));
+cout << x << " " << y;  // 5 4
+
+PHÂN TÍCH:
+─────────
+1. Trong cùng: sizeof(x++)
+   - Type: int
+   - Size: 4
+   - x++ KHÔNG chạy
+   
+2. Giữa: x = sizeof(x++)
+   - Type: int (type của phép gán)
+   - Value sẽ là: 4 (NHƯNG KHÔNG GÁN!)
+   - Size: 4 (sizeof(int))
+   
+3. Ngoài cùng: sizeof(x = ...)
+   - Type: int
+   - Size: 4
+   - Phép gán KHÔNG chạy
+   
+Kết quả: x = 5 (không đổi), y = 4
+```
+
+LƯU Ý VỚI FUNCTION CALL:
+```cpp
+int func() {
+    cout << "Called!";
+    return 10;
+}
+
+int main() {
+    sizeof(func());  // func() KHÔNG được gọi
+                     // "Called!" KHÔNG in ra
+                     // Chỉ biết return type là int
+                     // sizeof = 4
+}
+```
+
+BÀI TẬP LUYỆN TẬP:
+```cpp
+// Câu hỏi: Output là gì?
+int x = 1, y = 2, z = 3;
+sizeof(x + y * z++);
+cout << x << y << z;  // ?
+
+ĐÁP ÁN: 123
+- z++ KHÔNG chạy
+- x, y, z không đổi
+```
+
+QUAN TRỌNG - Ghi nhớ:
+═════════════════════
+🔥 sizeof KHÔNG BAO GIỜ có side effects
+🔥 sizeof chỉ quan tâm TYPE, không quan tâm VALUE
+🔥 Mọi expression bên trong sizeof KHÔNG được evaluate
+🔥 Đây là câu hỏi hay nhất trong exam - Đừng nhầm!
+
+3.3. SIZEOF VỚI ARRAY
+─────────────────────
+
+sizeof với array trả về TỔNG kích thước tất cả phần tử.
+
+VÍ DỤ CƠ BẢN:
+    int arr[10];
+    cout << sizeof(arr);        // 40 (10 * sizeof(int))
+    cout << sizeof(arr[0]);     // 4 (sizeof(int))
+    
+    // Công thức tính số phần tử array (hay dùng!)
+    int length = sizeof(arr) / sizeof(arr[0]);  // 10
+
+VÍ DỤ VỚI CHAR ARRAY:
+    char str[] = "Hello";
+    cout << sizeof(str);  // 6 (5 ký tự + '\0')
+    
+    // Array layout: ['H']['e']['l']['l']['o']['\0']
+    //                 0    1    2    3    4    5
+    
+    char str2[100] = "Hi";
+    cout << sizeof(str2); // 100 (kích thước KHAI BÁO, không phải độ dài string!)
+
+VÍ DỤ VỚI TYPES KHÁC:
+    double darr[5];
+    cout << sizeof(darr);  // 40 (5 * 8)
+    
+    char carr[20];
+    cout << sizeof(carr);  // 20 (20 * 1)
+    
+    // Struct array
+    struct Point { int x, y; };
+    Point parr[3];
+    cout << sizeof(parr);  // 24 (3 * 8)
+
+CÔNG THỨC TÍNH LENGTH:
+    Type arr[N];
+    int length = sizeof(arr) / sizeof(arr[0]);
+    
+    // Hoặc dùng macro (C-style)
+    #define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
+
+3.4. ⚠️ ARRAY DECAY - LỖI CỰC KỲ THƯỜNG GẶP
+────────────────────────────────────────────
+
+KHÁI NIỆM:
+Khi truyền array vào function, nó "decay" (chuyển) thành POINTER.
+sizeof trong function trả về sizeof(pointer), KHÔNG phải sizeof(array)!
+
+❌ LỖI KINH ĐIỂN:
+```cpp
+void func(int arr[]) {
+    int size = sizeof(arr) / sizeof(arr[0]);  // ❌ SAI!
+    cout << size;  // Không phải 10!
+}
+
+int main() {
+    int arr[10];
+    cout << sizeof(arr);  // 40 (✓ đúng - trong main)
+    
+    func(arr);  // arr decay thành pointer
+}
+```
+
+PHÂN TÍCH:
+- Trong main(): sizeof(arr) = 40 (toàn bộ array)
+- Trong func(): sizeof(arr) = 4 hoặc 8 (size của POINTER!)
+- size = 4/4 = 1 hoặc 8/4 = 2 (SAI!)
+
+TẠI SAO?
+- Parameter int arr[] tương đương int* arr
+- Compiler chuyển array thành pointer
+- sizeof(arr) = sizeof(pointer) = 4 (32-bit) hoặc 8 (64-bit)
+
+HÌNH DUNG:
+    main():
+    ┌────────────────────────────────┐
+    │ arr: [0][1][2]...[9]           │← sizeof = 40
+    └────────────────────────────────┘
+    
+    func(arr):
+    ┌──────────┐
+    │ arr: ptr │→ points to array    ← sizeof = 4/8 (pointer)
+    └──────────┘
+
+✓ GIẢI PHÁP 1: Truyền size như tham số
+```cpp
+void func(int arr[], int size) {  // size truyền từ ngoài
+    for (int i = 0; i < size; i++) {
+        cout << arr[i];
+    }
+}
+
+int main() {
+    int arr[10];
+    func(arr, sizeof(arr)/sizeof(arr[0]));  // Tính size trước
+}
+```
+
+✓ GIẢI PHÁP 2: Template (C++ modern)
+```cpp
+template<size_t N>
+void func(int (&arr)[N]) {  // Reference to array
+    cout << N;  // Biết chính xác size
+    for (int i = 0; i < N; i++) {
+        cout << arr[i];
+    }
+}
+
+int main() {
+    int arr[10];
+    func(arr);  // N = 10 tự động
+}
+```
+
+✓ GIẢI PHÁP 3: std::array (C++11)
+```cpp
+#include <array>
+
+void func(std::array<int, 10>& arr) {
+    cout << arr.size();  // 10
+    for (auto& elem : arr) {
+        cout << elem;
+    }
+}
+
+int main() {
+    std::array<int, 10> arr;
+    func(arr);
+}
+```
+
+LƯU Ý QUAN TRỌNG:
+─────────────────
+🔥 sizeof(array) trong main ≠ sizeof(array) trong function
+🔥 Array parameter = Pointer (decay)
+🔥 Luôn truyền size khi truyền array vào function
+🔥 Hoặc dùng std::array, std::vector (modern C++)
+
+3.5. SIZEOF VỚI POINTER
+───────────────────────
+
+sizeof(pointer) trả về kích thước CON TRỎ, không phải data nó trỏ tới.
+
+VÍ DỤ CƠ BẢN:
+    int x = 10;
+    int* ptr = &x;
+    
+    cout << sizeof(ptr);   // 4 (32-bit) hoặc 8 (64-bit)
+    cout << sizeof(*ptr);  // 4 (sizeof(int))
+
+PHÂN BIỆT:
+    int arr[100];
+    cout << sizeof(arr);   // 400 - size của ARRAY
+    
+    int* ptr = arr;
+    cout << sizeof(ptr);   // 4/8 - size của POINTER
+
+VÍ DỤ VỚI TYPES KHÁC:
+    char* p1;
+    int* p2;
+    double* p3;
+    void* p4;
+    MyClass* p5;
+    
+    // TẤT CẢ đều có size giống nhau!
+    cout << sizeof(p1);  // 4 hoặc 8
+    cout << sizeof(p2);  // 4 hoặc 8
+    cout << sizeof(p3);  // 4 hoặc 8
+    cout << sizeof(p4);  // 4 hoặc 8
+    cout << sizeof(p5);  // 4 hoặc 8
+
+TẠI SAO?
+- Pointer chỉ lưu địa chỉ
+- Tất cả địa chỉ đều có cùng kích thước
+- 32-bit system: địa chỉ 4 bytes
+- 64-bit system: địa chỉ 8 bytes
+
+POINTER VS DEREFERENCE:
+    int* ptr = new int[1000];
+    
+    sizeof(ptr)   // 4/8 - size của pointer
+    sizeof(*ptr)  // 4 - size của int (1 phần tử)
+    
+    // ❌ Không có cách nào biết size của toàn bộ array qua pointer!
+    // Phải tự nhớ size khi allocate
+
+DYNAMIC ALLOCATION:
+    int* arr = new int[100];
+    
+    // ❌ sizeof(arr) = 4/8 (pointer)
+    // ❌ KHÔNG THỂ dùng sizeof để biết đã allocate bao nhiêu
+    // ✓ Phải tự lưu size: int size = 100;
+    
+    delete[] arr;
+
+3.6. SIZEOF VỚI CLASS/STRUCT
+─────────────────────────────
+
+sizeof(class) bao gồm tất cả members VÀ padding/alignment.
+
+VÍ DỤ ĐƠN GIẢN:
+    class Simple {
+        int x;      // 4 bytes
+        double y;   // 8 bytes
+    };
+    
+    cout << sizeof(Simple);  // 16 (không phải 12!)
+
+TẠI SAO 16 CHỨ KHÔNG PHẢI 12?
+───────────────────────────────
+Compiler thêm PADDING để alignment (căn chỉnh địa chỉ).
+
+MEMORY LAYOUT:
+    Offset:  0  1  2  3  4  5  6  7  8  9  10 11 12 13 14 15
+            ┌──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┐
+            │    int x    │ padding │       double y        │
+            └──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┘
+    Bytes:   4 bytes       4 bytes    8 bytes
+
+TẠI SAO CẦN PADDING?
+- double cần align ở địa chỉ chia hết cho 8
+- int chiếm 0-3, double phải bắt đầu từ 8
+- Byte 4-7 là padding
+
+VÍ DỤ VỚI PADDING:
+```cpp
+class Example1 {
+    char c;   // 1 byte
+    int i;    // 4 bytes
+};
+
+sizeof(Example1) = 8 (không phải 5!)
+
+Memory layout:
+┌──┬──┬──┬──┬──┬──┬──┬──┐
+│c │ padding │   int i   │
+└──┴──┴──┴──┴──┴──┴──┴──┘
+ 1     3         4
+
+class Example2 {
+    char c1;  // 1 byte
+    char c2;  // 1 byte
+    int i;    // 4 bytes
+};
+
+sizeof(Example2) = 8
+
+Memory layout:
+┌──┬──┬──┬──┬──┬──┬──┬──┐
+│c1│c2│ pad │   int i   │
+└──┴──┴──┴──┴──┴──┴──┴──┘
+ 1  1   2       4
+```
+
+THỨ TỰ MEMBERS ẢNH HƯỞNG SIZE:
+──────────────────────────────
+
+❌ TỐN NHIỀU MEMORY:
+```cpp
+class Bad {
+    char a;    // 1 byte
+    int b;     // 4 bytes
+    char c;    // 1 byte
+    int d;     // 4 bytes
+};
+
+sizeof(Bad) = 16
+
+Memory layout:
+┌──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┐
+│a │ padding │   b   │c │ padding │   d   │ pad │
+└──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┘
+ 1     3       4     1     3       4     ???
+```
+
+✓ TIẾT KIỆM MEMORY:
+```cpp
+class Good {
+    int b;     // 4 bytes
+    int d;     // 4 bytes
+    char a;    // 1 byte
+    char c;    // 1 byte
+    // 2 bytes padding cuối
+};
+
+sizeof(Good) = 12
+
+Memory layout:
+┌──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┐
+│   b   │   d   │a │c │ pad │
+└──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┘
+   4       4     1  1   2
+```
+
+BEST PRACTICE:
+✓ Sắp xếp members theo size giảm dần
+✓ Group members cùng type
+✓ Giảm padding → Giảm memory
+
+3.7. SIZEOF VỚI EMPTY CLASS
+────────────────────────────
+
+Empty class (không có members) vẫn có size = 1 byte.
+
+VÍ DỤ:
+    class Empty {};
+    cout << sizeof(Empty);  // 1 (không phải 0!)
+
+LÝ DO:
+- Mỗi object cần một địa chỉ RIÊNG BIỆT
+- Nếu size = 0 → không thể phân biệt objects
+- C++ standard quy định minimum size = 1 byte
+
+VÍ DỤ MINH HỌA:
+```cpp
+class Empty {};
+
+int main() {
+    Empty e1, e2, e3;
+    
+    cout << &e1 << endl;  // 0x7ffd5b2c3e4c
+    cout << &e2 << endl;  // 0x7ffd5b2c3e4d (khác e1)
+    cout << &e3 << endl;  // 0x7ffd5b2c3e4e (khác e1, e2)
+    
+    // Nếu sizeof = 0 → không thể có địa chỉ khác nhau!
+}
+```
+
+VỚI ARRAY:
+    Empty arr[10];
+    cout << sizeof(arr);  // 10 (10 * 1)
+
+3.8. SIZEOF VỚI INHERITANCE
+────────────────────────────
+
+VÍ DỤ CƠ BẢN:
+```cpp
+class Base {
+    int x;  // 4 bytes
+};
+
+class Derived : public Base {
+    int y;  // 4 bytes
+};
+
+cout << sizeof(Base);     // 4
+cout << sizeof(Derived);  // 8 (4 của Base + 4 của Derived)
+```
+
+VỚI VIRTUAL FUNCTION:
+```cpp
+class Base {
+    int x;  // 4 bytes
+public:
+    virtual void func() {}  // Thêm vptr (4/8 bytes)
+};
+
+cout << sizeof(Base);  // 12 (32-bit) hoặc 16 (64-bit)
+// 4 (x) + 4/8 (vptr) + padding
+
+Memory layout:
+┌────────────┬──────────┬─────────┐
+│ vptr       │    x     │ padding │
+└────────────┴──────────┴─────────┘
+  4/8 bytes    4 bytes    0-4 bytes
+```
+
+MULTIPLE INHERITANCE:
+```cpp
+class A {
+    int a;  // 4 bytes
+};
+
+class B {
+    int b;  // 4 bytes
+};
+
+class C : public A, public B {
+    int c;  // 4 bytes
+};
+
+cout << sizeof(A);  // 4
+cout << sizeof(B);  // 4
+cout << sizeof(C);  // 12 (4 + 4 + 4)
+```
+
+VỚI VIRTUAL INHERITANCE:
+```cpp
+class Base {
+    int x;  // 4 bytes
+};
+
+class A : virtual public Base {
+    int a;  // 4 bytes
+    // + vptr cho virtual base
+};
+
+cout << sizeof(A);  // 12-16 (tùy compiler)
+// Có thêm vptr để manage virtual base
+```
+
+3.9. TÓM TẮT QUAN TRỌNG
+────────────────────────
+
+CHECKLIST SIZEOF:
+═════════════════
+□ sizeof KHÔNG có side effects - KHÔNG evaluate expression
+□ sizeof(array) trong function = sizeof(pointer) (array decay)
+□ sizeof(pointer) = 4 (32-bit) hoặc 8 (64-bit)
+□ sizeof(class) bao gồm padding
+□ sizeof(Empty class) = 1
+□ Virtual function thêm vptr (4/8 bytes)
+□ sizeof là compile-time operator
+□ Return type là size_t
+
+COMMON VALUES:
+══════════════
+char        : 1 byte
+short       : 2 bytes
+int         : 4 bytes
+long        : 4 or 8 bytes
+long long   : 8 bytes
+float       : 4 bytes
+double      : 8 bytes
+pointer     : 4 (32-bit) or 8 (64-bit)
+bool        : 1 byte
+Empty class : 1 byte
+
+TIPS:
+═════
+✓ Tính array length: sizeof(arr) / sizeof(arr[0])
+✓ Truyền size khi pass array vào function
+✓ Sắp xếp class members để giảm padding
+✓ Nhớ array decay thành pointer
+✓ sizeof không bao giờ có side effects!
+
+═══════════════════════════════════════════════════════════════════════════════
+
+🎯 Tài liệu này sẽ được tiếp tục với các chapters còn lại...
+💡 Mỗi chapter theo format: Khái niệm → Lưu ý → Code thực tế → Lỗi thường gặp
+📖 Tổng số ~300+ trang với ví dụ chi tiết từ tất cả các file test
+
+═══════════════════════════════════════════════════════════════════════════════

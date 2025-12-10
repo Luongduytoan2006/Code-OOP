@@ -1,0 +1,1015 @@
+================================================================================
+              PHẦN V: TỔNG HỢP & THỰC HÀNH
+================================================================================
+
+Tổng hợp các lỗi thường gặp, best practices, và checklist ôn tập
+Format: Vấn đề → Giải thích → Giải pháp
+
+================================================================================
+
+MỤC LỤC
+═══════
+
+35. CÁC LỖI THƯỜNG GẶP (TOP 20)
+36. BEST PRACTICES
+37. CHECKLIST TỔNG HỢP
+38. DEBUGGING TECHNIQUES
+39. PERFORMANCE TIPS
+40. COMPILATION & TOOLS
+
+================================================================================
+
+═══════════════════════════════════════════════════════════════════════════════
+CHAPTER 35: CÁC LỖI THƯỜNG GẶP (TOP 20)
+═══════════════════════════════════════════════════════════════════════════════
+
+35.1. SIZEOF SIDE EFFECTS ⭐⭐⭐
+───────────────────────────────
+
+❌ LỖI:
+```cpp
+int x = 5;
+int y = sizeof(x++);  // Nghĩ x = 6
+cout << x << y;  // ❌ Nghĩ: 64
+```
+
+✓ ĐÚNG:
+```cpp
+int x = 5;
+int y = sizeof(x++);  // sizeof KHÔNG thực hiện x++
+cout << x << y;  // ✓ Đúng: 54 (x không đổi!)
+```
+
+GHI NHỚ: sizeof KHÔNG BAO GIỜ có side effects!
+
+35.2. ARRAY DECAY
+─────────────────
+
+❌ LỖI:
+```cpp
+void func(int arr[]) {
+    int size = sizeof(arr) / sizeof(arr[0]);  // ❌ SAI!
+    // arr decay thành pointer, sizeof(arr) = 4/8
+}
+
+int main() {
+    int arr[10];
+    func(arr);
+}
+```
+
+✓ GIẢI PHÁP:
+```cpp
+void func(int arr[], int size) {  // Truyền size
+    for (int i = 0; i < size; i++) {
+        cout << arr[i];
+    }
+}
+
+int main() {
+    int arr[10];
+    func(arr, sizeof(arr)/sizeof(arr[0]));  // Tính size trước
+}
+```
+
+35.3. DANGLING REFERENCE
+────────────────────────
+
+❌ LỖI:
+```cpp
+int& getReference() {
+    int x = 10;
+    return x;  // ❌ NGUY HIỂM! x bị hủy
+}
+```
+
+✓ GIẢI PHÁP:
+```cpp
+int& getReference() {
+    static int x = 10;  // ✓ Static: tồn tại sau return
+    return x;
+}
+```
+
+35.4. KHÔNG CÓ VIRTUAL DESTRUCTOR
+──────────────────────────────────
+
+❌ LỖI:
+```cpp
+class Base {
+public:
+    ~Base() {}  // ❌ Không virtual!
+};
+
+class Derived : public Base {
+    int* data;
+public:
+    Derived() { data = new int[1000]; }
+    ~Derived() { delete[] data; }
+};
+
+int main() {
+    Base* ptr = new Derived();
+    delete ptr;  // ❌ MEMORY LEAK! Chỉ gọi ~Base()
+}
+```
+
+✓ GIẢI PHÁP:
+```cpp
+class Base {
+public:
+    virtual ~Base() {}  // ✓ Virtual!
+};
+```
+
+35.5. SLICING PROBLEM
+─────────────────────
+
+❌ LỖI:
+```cpp
+void func(Base obj) {  // ❌ Pass by value
+    obj.print();  // Slicing! Chỉ gọi Base::print
+}
+
+int main() {
+    Derived d;
+    func(d);  // Derived part bị "sliced off"
+}
+```
+
+✓ GIẢI PHÁP:
+```cpp
+void func(Base& obj) {  // ✓ Pass by reference
+    obj.print();  // Polymorphism works!
+}
+```
+
+35.6. QUÊN SELF-ASSIGNMENT CHECK
+─────────────────────────────────
+
+❌ LỖI:
+```cpp
+MyClass& operator=(const MyClass& other) {
+    delete[] data;  // ❌ Delete first
+    data = new char[other.length];
+    strcpy(data, other.data);  // ❌ other đã bị delete!
+    return *this;
+}
+
+// Khi: obj = obj; → CRASH!
+```
+
+✓ GIẢI PHÁP:
+```cpp
+MyClass& operator=(const MyClass& other) {
+    if (this != &other) {  // ✓ Check trước
+        delete[] data;
+        data = new char[other.length];
+        strcpy(data, other.data);
+    }
+    return *this;
+}
+```
+
+35.7. STREAM OPERATOR LÀ MEMBER
+────────────────────────────────
+
+❌ LỖI:
+```cpp
+class MyClass {
+public:
+    ostream& operator<<(ostream& os) {  // ❌ SAI!
+        os << value;
+        return os;
+    }
+};
+
+// Gọi: obj << cout;  // ❌ Ngược!
+```
+
+✓ GIẢI PHÁP:
+```cpp
+class MyClass {
+public:
+    friend ostream& operator<<(ostream& os, const MyClass& obj) {
+        os << obj.value;
+        return os;
+    }
+};
+
+// Gọi: cout << obj;  // ✓ Đúng!
+```
+
+35.8. RETURN REFERENCE ĐẾN LOCAL
+─────────────────────────────────
+
+❌ LỖI:
+```cpp
+MyClass& operator+(const MyClass& other) const {
+    MyClass result = ...;
+    return result;  // ❌ Dangling reference!
+}
+```
+
+✓ GIẢI PHÁP:
+```cpp
+MyClass operator+(const MyClass& other) const {
+    MyClass result = ...;
+    return result;  // ✓ Return by value
+}
+```
+
+35.9. QUÊN GỌI BASE CONSTRUCTOR
+────────────────────────────────
+
+❌ LỖI:
+```cpp
+class Base {
+    int value;
+public:
+    Base(int v) : value(v) {}  // Không có default ctor
+};
+
+class Derived : public Base {
+public:
+    Derived(int v) {}  // ❌ ERROR! Base không có default ctor
+};
+```
+
+✓ GIẢI PHÁP:
+```cpp
+class Derived : public Base {
+public:
+    Derived(int v) : Base(v) {}  // ✓ Gọi base ctor
+};
+```
+
+35.10. QUÊN CONST TRONG COMPARISON
+───────────────────────────────────
+
+❌ LỖI:
+```cpp
+class MyClass {
+public:
+    bool operator==(const MyClass& other) {  // ❌ Thiếu const
+        return value == other.value;
+    }
+};
+
+const MyClass obj1, obj2;
+obj1 == obj2;  // ❌ ERROR: Không gọi được non-const function
+```
+
+✓ GIẢI PHÁP:
+```cpp
+bool operator==(const MyClass& other) const {  // ✓ const
+    return value == other.value;
+}
+```
+
+35.11. DEFAULT PARAMETERS KHÔNG Ở CUỐI
+───────────────────────────────────────
+
+❌ LỖI:
+```cpp
+void func(int x = 10, int y);  // ❌ ERROR!
+```
+
+✓ GIẢI PHÁP:
+```cpp
+void func(int x, int y = 10);  // ✓ Default ở cuối
+```
+
+35.12. AMBIGUITY VỚI OVERLOADING + DEFAULT
+───────────────────────────────────────────
+
+❌ LỖI:
+```cpp
+int func(int, int);
+int func(int, int, int = 5);
+
+func(1, 2);  // ❌ Ambiguous! Gọi func nào?
+```
+
+✓ GIẢI PHÁP:
+```cpp
+// Tránh overloading + default cùng lúc
+// Hoặc đặt tên khác:
+int func2(int, int);
+int func3(int, int, int = 5);
+```
+
+35.13. OPERATOR[] RETURN BY VALUE
+──────────────────────────────────
+
+❌ LỖI:
+```cpp
+int operator[](int index) {  // ❌ Return by value
+    return data[index];
+}
+
+arr[5] = 10;  // ❌ Không gán được!
+```
+
+✓ GIẢI PHÁP:
+```cpp
+int& operator[](int index) {  // ✓ Return reference
+    return data[index];
+}
+
+arr[5] = 10;  // ✓ OK!
+```
+
+35.14. KHÔNG RETURN STREAM&
+───────────────────────────
+
+❌ LỖI:
+```cpp
+void operator<<(ostream& os, const MyClass& obj) {
+    os << obj.value;
+    // ❌ Không return
+}
+
+cout << obj1 << obj2;  // ❌ ERROR: Không chain được
+```
+
+✓ GIẢI PHÁP:
+```cpp
+ostream& operator<<(ostream& os, const MyClass& obj) {
+    os << obj.value;
+    return os;  // ✓ Return stream&
+}
+```
+
+35.15. SHALLOW COPY
+───────────────────
+
+❌ LỖI:
+```cpp
+class MyClass {
+    int* data;
+public:
+    MyClass(int v) { data = new int(v); }
+    ~MyClass() { delete data; }
+    // ❌ Không có copy ctor → Compiler-generated shallow copy
+};
+
+MyClass obj1(42);
+MyClass obj2 = obj1;  // ❌ obj2.data = obj1.data (same pointer!)
+// ❌ DOUBLE DELETE khi ~obj1() và ~obj2()
+```
+
+✓ GIẢI PHÁP:
+```cpp
+MyClass(const MyClass& other) {
+    data = new int(*other.data);  // ✓ Deep copy
+}
+```
+
+35.16. TYPE PROMOTION BUG
+─────────────────────────
+
+❌ LỖI:
+```cpp
+int a = 5, b = 2;
+double result = a / b;  // ❌ Nghĩ: 2.5
+cout << result;  // ❌ Kết quả: 2.0 (int/int = int)
+```
+
+✓ GIẢI PHÁP:
+```cpp
+double result = static_cast<double>(a) / b;  // ✓ 2.5
+// Hoặc: double result = a / 2.0;
+```
+
+35.17. REFERENCE RE-BIND
+────────────────────────
+
+❌ LỖI:
+```cpp
+int x = 10, y = 20;
+int& ref = x;
+ref = y;  // ❌ Nghĩ: ref trỏ sang y
+cout << x;  // ❌ Nghĩ: 10, Thật: 20
+```
+
+✓ HIỂU ĐÚNG:
+```cpp
+ref = y;  // ✓ GÁN GIÁ TRỊ y cho x (x = 20)
+// ref VẪN là alias của x
+```
+
+35.18. INITIALIZER LIST ORDER
+─────────────────────────────
+
+❌ LỖI:
+```cpp
+class MyClass {
+    int x, y;  // Khai báo: x trước y
+public:
+    MyClass(int val) : y(val), x(y) {}  // ❌ x init trước y!
+    // x = ??? (y chưa init)
+};
+```
+
+✓ GIẢI PHÁP:
+```cpp
+MyClass(int val) : x(val), y(x) {}  // ✓ Theo thứ tự khai báo
+```
+
+35.19. STATIC MEMBER KHÔNG DEFINE
+──────────────────────────────────
+
+❌ LỖI:
+```cpp
+class MyClass {
+public:
+    static int count;  // Chỉ khai báo
+};
+
+int main() {
+    MyClass::count = 10;  // ❌ LINKER ERROR!
+}
+```
+
+✓ GIẢI PHÁP:
+```cpp
+class MyClass {
+public:
+    static int count;
+};
+
+int MyClass::count = 0;  // ✓ PHẢI define ở ngoài
+```
+
+35.20. QUÊN OVERRIDE
+────────────────────
+
+❌ LỖI:
+```cpp
+class Derived : public Base {
+public:
+    void func(double) {}  // ❌ Không override Base::func(int)
+    // Tạo function MỚI thay vì override
+};
+```
+
+✓ GIẢI PHÁP:
+```cpp
+void func(double) override {}  // ✓ Compiler check
+// ERROR: Signature không khớp!
+
+void func(int) override {}  // ✓ OK
+```
+
+═══════════════════════════════════════════════════════════════════════════════
+CHAPTER 36: BEST PRACTICES
+═══════════════════════════════════════════════════════════════════════════════
+
+36.1. CONST-CORRECTNESS
+───────────────────────
+
+✓ LUÔN DÙNG const:
+```cpp
+class MyClass {
+    int value;
+public:
+    // ✓ Getters const
+    int getValue() const { return value; }
+    
+    // ✓ Comparison const
+    bool operator==(const MyClass& other) const {
+        return value == other.value;
+    }
+    
+    // ✓ Parameters const&
+    MyClass(const MyClass& other) { ... }
+    MyClass& operator=(const MyClass& other) { ... }
+};
+
+// ✓ Pass const reference
+void print(const MyClass& obj) { ... }
+```
+
+36.2. RULE OF ZERO/THREE/FIVE
+──────────────────────────────
+
+✓ RULE OF ZERO (khuyên dùng):
+```cpp
+class MyClass {
+    std::vector<int> data;  // ✓ Dùng STL containers
+    std::string name;
+    // Không cần define destructor, copy, move
+    // Compiler-generated đủ tốt!
+};
+```
+
+✓ RULE OF THREE (khi cần):
+```cpp
+class MyClass {
+    int* data;
+public:
+    ~MyClass() { delete[] data; }
+    MyClass(const MyClass& other) { ... }
+    MyClass& operator=(const MyClass& other) { ... }
+};
+```
+
+✓ RULE OF FIVE (C++11):
+```cpp
+class MyClass {
+public:
+    ~MyClass() { ... }
+    MyClass(const MyClass&) { ... }
+    MyClass& operator=(const MyClass&) { ... }
+    MyClass(MyClass&&) noexcept { ... }
+    MyClass& operator=(MyClass&&) noexcept { ... }
+};
+```
+
+36.3. RAII PATTERN
+──────────────────
+
+✓ TỰ ĐỘNG QUẢN LÝ RESOURCES:
+```cpp
+class FileHandle {
+    FILE* file;
+public:
+    FileHandle(const char* name) {
+        file = fopen(name, "r");
+    }
+    ~FileHandle() {
+        if (file) fclose(file);  // ✓ Tự động
+    }
+};
+
+// ✓ Dùng smart pointers
+std::unique_ptr<MyClass> ptr = std::make_unique<MyClass>();
+// Không cần delete, tự động cleanup
+```
+
+36.4. PREFER REFERENCES OVER POINTERS
+──────────────────────────────────────
+
+✓ DÙNG REFERENCES KHI CÓ THỂ:
+```cpp
+// ✓ Reference (an toàn hơn)
+void func(const MyClass& obj) { ... }
+
+// ❌ Pointer (chỉ khi cần nullptr)
+void func(const MyClass* obj) {
+    if (obj) { ... }
+}
+```
+
+36.5. INITIALIZE MEMBERS IN INITIALIZER LIST
+─────────────────────────────────────────────
+
+✓ DÙNG INITIALIZER LIST:
+```cpp
+class MyClass {
+    int x;
+    const int y;
+    MyClass& ref;
+public:
+    // ✓ Initializer list
+    MyClass(int a, int b, MyClass& r) : x(a), y(b), ref(r) {}
+    
+    // ❌ Body assignment (không compile với const, reference)
+    // MyClass(int a, int b) {
+    //     x = a;
+    //     y = b;  // ERROR: const
+    // }
+};
+```
+
+36.6. USE OVERRIDE KEYWORD
+──────────────────────────
+
+✓ RÕ RÀNG VỚI override:
+```cpp
+class Derived : public Base {
+public:
+    void func() override {}  // ✓ Compiler check
+    void func2() {}          // ❌ Không rõ: new hay override?
+};
+```
+
+36.7. PASS SMALL TYPES BY VALUE
+────────────────────────────────
+
+✓ QUY TẮC NGÓN TAY CÁI:
+```cpp
+// Small types (int, char, bool, pointer) → by value
+void func(int x) { ... }
+
+// Large types (class, struct > 16 bytes) → by const reference
+void func(const string& str) { ... }
+void func(const vector<int>& vec) { ... }
+```
+
+36.8. EXPLICIT CONSTRUCTORS
+───────────────────────────
+
+✓ TRÁNH IMPLICIT CONVERSION:
+```cpp
+class MyClass {
+public:
+    explicit MyClass(int value) { ... }  // ✓ explicit
+    
+    // Ngăn:
+    // MyClass obj = 10;  // ❌ ERROR với explicit
+    // func(10);          // ❌ ERROR với explicit
+    
+    // Phải:
+    // MyClass obj(10);   // ✓ OK
+};
+```
+
+═══════════════════════════════════════════════════════════════════════════════
+CHAPTER 37: CHECKLIST TỔNG HỢP
+═══════════════════════════════════════════════════════════════════════════════
+
+37.1. REFERENCES & POINTERS
+───────────────────────────
+
+□ Reference PHẢI khởi tạo ngay
+□ Reference KHÔNG THỂ re-bind
+□ Reference KHÔNG có null
+□ Pointer có thể nullptr, có thể đổi target
+□ Dùng reference cho parameters, pointer cho optional
+
+37.2. SIZEOF
+────────────
+
+□ sizeof KHÔNG có side effects ⭐⭐⭐
+□ sizeof(array) trong function = sizeof(pointer)
+□ sizeof(pointer) = 4 (32-bit) hoặc 8 (64-bit)
+□ sizeof(class) bao gồm padding
+□ Truyền size khi pass array vào function
+
+37.3. DEFAULT PARAMETERS
+────────────────────────
+
+□ Default parameters PHẢI ở cuối
+□ Cẩn thận ambiguity với overloading
+□ Không redeclare với default khác
+
+37.4. OPERATOR OVERLOADING
+──────────────────────────
+
+□ =, [], (), -> PHẢI là member functions
+□ <<, >> PHẢI là friend functions
+□ Arithmetic (+, -, *, /) return BY VALUE
+□ Compound (+=, -=) return REFERENCE
+□ Stream operators return stream&
+□ operator= cần self-assignment check
+□ operator[] return reference để gán được
+□ Comparison operators nên const
+
+37.5. INHERITANCE
+─────────────────
+
+□ Construction: Base → Derived
+□ Destruction: ~Derived → ~Base
+□ Virtual destructor nếu class được kế thừa
+□ Gọi base constructor trong initializer list
+□ Copy constructor phải gọi base copy
+□ Pass by reference/pointer để tránh slicing
+□ Dùng override keyword
+
+37.6. POLYMORPHISM
+──────────────────
+
+□ Virtual functions cho runtime polymorphism
+□ Pure virtual (= 0) cho abstract classes
+□ Upcasting luôn an toàn
+□ Downcasting dùng dynamic_cast
+□ Virtual destructor để delete qua base pointer
+
+37.7. TEMPLATES
+───────────────
+
+□ Function templates automatic type deduction
+□ Class templates cần explicit type
+□ Template specialization cho specific types
+
+37.8. EXCEPTIONS
+────────────────
+
+□ Use try-catch-throw
+□ Catch specific exceptions trước general
+□ RAII pattern tự động cleanup
+□ noexcept cho functions không throw
+
+37.9. COPY CONTROL
+──────────────────
+
+□ Rule of Three/Five/Zero
+□ Deep copy cho dynamic memory
+□ Self-assignment check trong operator=
+□ Return *this trong assignment
+□ Move semantics cho performance (C++11)
+
+37.10. STATIC
+─────────────
+
+□ Static members shared by all objects
+□ Static members PHẢI define ở ngoài class
+□ Static functions không có this pointer
+□ Static local variables giữ giá trị
+
+═══════════════════════════════════════════════════════════════════════════════
+CHAPTER 38: DEBUGGING TECHNIQUES
+═══════════════════════════════════════════════════════════════════════════════
+
+38.1. PRINT DEBUGGING
+─────────────────────
+
+```cpp
+class MyClass {
+public:
+    MyClass() {
+        cout << "MyClass() called" << endl;  // ✓ Track constructors
+    }
+    
+    ~MyClass() {
+        cout << "~MyClass() called" << endl;  // ✓ Track destructors
+    }
+    
+    void func() {
+        cout << "func() start" << endl;
+        // ...
+        cout << "func() end" << endl;
+    }
+};
+```
+
+38.2. ASSERT
+────────────
+
+```cpp
+#include <cassert>
+
+void func(int* ptr) {
+    assert(ptr != nullptr);  // ✓ Check preconditions
+    // ...
+}
+
+void setSize(int s) {
+    assert(s > 0);  // ✓ Check invariants
+    size = s;
+}
+```
+
+38.3. MEMORY DEBUGGING
+──────────────────────
+
+VALGRIND (Linux):
+```bash
+g++ -g program.cpp -o program
+valgrind --leak-check=full ./program
+```
+
+VISUAL STUDIO (Windows):
+- Enable memory leak detection
+- Check output window for leaks
+
+38.4. GDB BASICS
+────────────────
+
+```bash
+g++ -g program.cpp -o program
+gdb ./program
+
+(gdb) break main       # Set breakpoint
+(gdb) run              # Run program
+(gdb) next             # Next line
+(gdb) step             # Step into
+(gdb) print variable   # Print value
+(gdb) backtrace        # Call stack
+```
+
+═══════════════════════════════════════════════════════════════════════════════
+CHAPTER 39: PERFORMANCE TIPS
+═══════════════════════════════════════════════════════════════════════════════
+
+39.1. PASS BY CONST REFERENCE
+──────────────────────────────
+
+❌ CHẬM:
+```cpp
+void func(string str) {  // Copy toàn bộ string
+    cout << str;
+}
+```
+
+✓ NHANH:
+```cpp
+void func(const string& str) {  // Không copy
+    cout << str;
+}
+```
+
+39.2. RESERVE MEMORY
+────────────────────
+
+❌ CHẬM:
+```cpp
+vector<int> vec;
+for (int i = 0; i < 1000000; i++) {
+    vec.push_back(i);  // Nhiều reallocation
+}
+```
+
+✓ NHANH:
+```cpp
+vector<int> vec;
+vec.reserve(1000000);  // Pre-allocate
+for (int i = 0; i < 1000000; i++) {
+    vec.push_back(i);  // Ít reallocation hơn
+}
+```
+
+39.3. MOVE SEMANTICS (C++11)
+────────────────────────────
+
+❌ CHẬM:
+```cpp
+vector<int> func() {
+    vector<int> result;
+    // ... fill result
+    return result;  // Copy (trước C++11)
+}
+```
+
+✓ NHANH:
+```cpp
+vector<int> func() {
+    vector<int> result;
+    // ... fill result
+    return result;  // Move (C++11), không copy!
+}
+```
+
+39.4. EMPLACE THAY VÌ PUSH
+──────────────────────────
+
+❌ CHẬM:
+```cpp
+vector<string> vec;
+vec.push_back(string("Hello"));  // Tạo temporary rồi copy
+```
+
+✓ NHANH:
+```cpp
+vector<string> vec;
+vec.emplace_back("Hello");  // Construct trực tiếp, không copy
+```
+
+═══════════════════════════════════════════════════════════════════════════════
+CHAPTER 40: COMPILATION & TOOLS
+═══════════════════════════════════════════════════════════════════════════════
+
+40.1. COMPILATION FLAGS
+───────────────────────
+
+GCC/G++:
+```bash
+# Basic
+g++ program.cpp -o program
+
+# Debug symbols
+g++ -g program.cpp -o program
+
+# Optimization
+g++ -O2 program.cpp -o program  # O2 optimization
+g++ -O3 program.cpp -o program  # O3 aggressive
+
+# Warnings
+g++ -Wall -Wextra -Werror program.cpp -o program
+
+# C++ standard
+g++ -std=c++11 program.cpp -o program
+g++ -std=c++17 program.cpp -o program
+g++ -std=c++20 program.cpp -o program
+
+# All together
+g++ -Wall -Wextra -std=c++17 -O2 program.cpp -o program
+```
+
+40.2. MAKEFILE EXAMPLE
+──────────────────────
+
+```makefile
+CXX = g++
+CXXFLAGS = -Wall -Wextra -std=c++17 -O2
+TARGET = program
+SRCS = main.cpp class1.cpp class2.cpp
+OBJS = $(SRCS:.cpp=.o)
+
+$(TARGET): $(OBJS)
+	$(CXX) $(CXXFLAGS) -o $(TARGET) $(OBJS)
+
+%.o: %.cpp
+	$(CXX) $(CXXFLAGS) -c $<
+
+clean:
+	rm -f $(OBJS) $(TARGET)
+```
+
+40.3. COMMON COMPILER ERRORS
+─────────────────────────────
+
+ERROR: undefined reference to ...
+→ Quên link file .cpp hoặc library
+
+ERROR: multiple definition of ...
+→ Define function/variable trong .h file (nên declare only)
+
+ERROR: cannot convert ... to ...
+→ Type mismatch, cần cast hoặc fix type
+
+ERROR: no matching function for call to ...
+→ Function signature không khớp, check parameters
+
+ERROR: ... was not declared in this scope
+→ Quên include header hoặc using namespace
+
+═══════════════════════════════════════════════════════════════════════════════
+
+🎯 TỔNG KẾT TOÀN BỘ KHÓA HỌC OOP C++
+════════════════════════════════════
+
+PHẦN I: C++ FUNDAMENTALS
+✓ References, Pointers, sizeof
+✓ Default parameters, Pass by value/reference/pointer
+✓ Type conversion
+
+PHẦN II: OPERATOR OVERLOADING
+✓ Arithmetic, Compound, Stream, Comparison operators
+✓ Subscript, Function call, Assignment operators
+✓ Const-correctness
+
+PHẦN III: INHERITANCE & POLYMORPHISM
+✓ Single/Multiple inheritance
+✓ Constructor/Destructor order
+✓ Virtual functions, Virtual destructor
+✓ Polymorphism, Slicing problem
+
+PHẦN IV: ADVANCED CONCEPTS
+✓ Templates (function & class)
+✓ Exception handling
+✓ Copy control (Rule of Three/Five/Zero)
+✓ Static members, Friend functions
+
+PHẦN V: TỔNG HỢP & THỰC HÀNH
+✓ Top 20 lỗi thường gặp
+✓ Best practices
+✓ Checklist tổng hợp
+✓ Debugging & Performance tips
+
+═══════════════════════════════════════════════════════════════════════════════
+
+⭐ LỜI KHUYÊN CUỐI CÙNG:
+━━━━━━━━━━━━━━━━━━━━
+
+1. ÔN TẬP THEO THỨ TỰ:
+   → Part I → Part II → Part III → Part IV → Part V
+
+2. THỰC HÀNH CODE:
+   → Đọc hiểu không đủ, phải viết code
+   → Làm lại tất cả ví dụ trong tài liệu
+   → Debug để hiểu cách hoạt động
+
+3. TẬP TRUNG VÀO:
+   ⭐⭐⭐ sizeof KHÔNG có side effects
+   ⭐⭐⭐ Virtual destructor
+   ⭐⭐⭐ Constructor/Destructor order
+   ⭐⭐ Slicing problem
+   ⭐⭐ Deep copy vs Shallow copy
+
+4. LÀM BÀI TẬP:
+   → Test1: References, pointers, sizeof, default parameters
+   → Test2: Operator overloading đầy đủ
+   → Gki: Inheritance, constructors/destructors
+   → Test3: Virtual functions, polymorphism
+
+5. CHECKLIST TRƯỚC THI:
+   □ Đọc lại 20 lỗi thường gặp
+   □ Review tất cả ⭐⭐⭐ sections
+   □ Làm lại code từ test files
+   □ Check checklist tổng hợp
+
+═══════════════════════════════════════════════════════════════════════════════
+
+CHÚC BẠN HỌC TỐT VÀ THI ĐẠT ĐIỂM CAO! 🎓
+
+Tài liệu được tổng hợp từ:
+- Test 1: C++ Fundamentals
+- Test 2: Operator Overloading  
+- Giữa Kì: Inheritance
+- Test 3: Advanced OOP
+- Code examples từ tất cả các file test
+
+════════════════════════════════════════════════════════════════════════════════

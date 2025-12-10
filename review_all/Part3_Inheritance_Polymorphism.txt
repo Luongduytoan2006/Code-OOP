@@ -1,0 +1,1266 @@
+================================================================================
+          PHẦN III: INHERITANCE & POLYMORPHISM (Giữa Kì + Test 3)
+================================================================================
+
+Tài liệu ôn tập chi tiết về Kế thừa và Đa hình trong C++
+Format: Khái niệm → Lưu ý → Ví dụ code thực tế → Lỗi thường gặp
+
+================================================================================
+
+MỤC LỤC
+═══════
+
+18. KẾ THỪA ĐƠN (SINGLE INHERITANCE)
+    18.1. Khái niệm IS-A relationship
+    18.2. Public/Protected/Private inheritance
+    18.3. Ví dụ code chi tiết (Gki/test.cpp)
+    
+19. CONSTRUCTOR & DESTRUCTOR ORDER ⭐ THEN CHỐT
+    19.1. Quy tắc vàng: Cha → Con, ~Con → ~Cha
+    19.2. Ví dụ code (Gki/test.cpp, test2.cpp)
+    19.3. Phân tích chi tiết từng bước
+    19.4. Multiple inheritance order
+    
+20. INITIALIZER LIST
+    20.1. Khái niệm & Syntax
+    20.2. Gọi base constructor
+    20.3. Lỗi: Không gọi base constructor
+    20.4. Thứ tự khởi tạo
+    
+21. VIRTUAL DESTRUCTOR ⭐ CỰC KỲ QUAN TRỌNG
+    21.1. Tại sao cần virtual destructor
+    21.2. Memory leak khi không có virtual
+    21.3. Ví dụ code (Gki/test.cpp)
+    21.4. Quy tắc: Base class → virtual destructor
+    
+22. VIRTUAL FUNCTIONS
+    22.1. Khái niệm dynamic binding
+    22.2. Override keyword
+    22.3. Virtual function table (vtable)
+    
+23. POLYMORPHISM
+    23.1. Compile-time polymorphism (static)
+    23.2. Runtime polymorphism (dynamic)
+    23.3. Upcasting (an toàn)
+    23.4. Downcasting (dynamic_cast)
+    
+24. SLICING PROBLEM ⭐ LỖI THƯỜNG GẶP
+    24.1. Khái niệm slicing
+    24.2. Ví dụ code minh họa
+    24.3. Giải pháp: Pass by reference/pointer
+    
+25. ĐA KẾ THỪA (MULTIPLE INHERITANCE)
+    25.1. Khái niệm & Syntax
+    25.2. Constructor/Destructor order
+    25.3. Diamond problem
+    25.4. Virtual inheritance
+    
+26. OPERATOR OVERLOADING VỚI INHERITANCE
+    26.1. Kế thừa operators
+    26.2. Override operators cho derived class
+    26.3. Gọi base class operator
+    26.4. Stream operators với inheritance
+
+================================================================================
+
+═══════════════════════════════════════════════════════════════════════════════
+CHAPTER 18: KẾ THỪA ĐƠN (SINGLE INHERITANCE)
+═══════════════════════════════════════════════════════════════════════════════
+
+18.1. KHÁI NIỆM IS-A RELATIONSHIP
+──────────────────────────────────
+
+ĐỊNH NGHĨA:
+Inheritance (kế thừa) cho phép class con (derived) kế thừa properties và methods 
+từ class cha (base).
+
+IS-A RELATIONSHIP:
+- Derived class "IS-A" Base class
+- Dog IS-A Animal
+- Circle IS-A Shape
+- Student IS-A Person
+
+CÚ PHÁP:
+```cpp
+class Base {
+    // Base class members
+};
+
+class Derived : public Base {
+    // Derived class members
+    // + kế thừa Base members
+};
+```
+
+18.2. PUBLIC/PROTECTED/PRIVATE INHERITANCE
+───────────────────────────────────────────
+
+3 LOẠI INHERITANCE:
+┌────────────────┬─────────────┬──────────────┬──────────────┐
+│ Base Member    │ public      │ protected    │ private      │
+│ Access         │ inheritance │ inheritance  │ inheritance  │
+├────────────────┼─────────────┼──────────────┼──────────────┤
+│ public         │ public      │ protected    │ private      │
+│ protected      │ protected   │ protected    │ private      │
+│ private        │ không access│ không access │ không access │
+└────────────────┴─────────────┴──────────────┴──────────────┘
+
+PUBLIC INHERITANCE (khuyên dùng):
+- Giữ nguyên access specifier
+- IS-A relationship
+- 99% trường hợp dùng public
+
+PROTECTED INHERITANCE:
+- public/protected → protected
+- Hiếm khi dùng
+
+PRIVATE INHERITANCE:
+- Tất cả → private
+- HAS-A relationship (composition)
+- Hiếm khi dùng
+
+18.3. VÍ DỤ CODE TỪ TEST (Gki/test.cpp)
+────────────────────────────────────────
+
+```cpp
+#include <iostream>
+using namespace std;
+
+static int GID = 0;
+
+//===== ExamA (Lớp cơ sở) =====
+class ExamA {
+    int secret_ = -777;  // private
+public:
+    int ax = -1;
+
+    ExamA() : ax(0) {
+        cout << "ExamA()  id=" << ++GID << "  ax=" << ax << "\n";
+    }
+
+    ExamA(int x) : ax(x) {
+        cout << "ExamA(int)  ax=" << ax << "\n";
+    }
+
+    ExamA(const ExamA& other) : ax(other.ax) {
+        cout << "ExamA(copy)  ax=" << ax << "\n";
+    }
+
+    ExamA& operator=(const ExamA& rhs) {
+        cout << "ExamA::operator= from ax=" << rhs.ax << "\n";
+        if (this != &rhs) ax = rhs.ax;
+        return *this;
+    }
+
+    virtual ~ExamA() {
+        cout << "~ExamA()  ax=" << ax << "\n";
+    }
+
+    friend ostream& operator<<(ostream& os, const ExamA& a) {
+        return os << "[A ax=" << a.ax << "]";
+    }
+};
+
+//===== ExamB (Lớp dẫn xuất) =====
+class ExamB : public ExamA {  // ⭐ public inheritance
+public:
+    int bx = -2;
+
+    ExamB() : ExamA(), bx(100) {
+        cout << "ExamB()       bx=" << bx << "\n";
+    }
+
+    explicit ExamB(int a, int b) : ExamA(a), bx(b) {
+        cout << "ExamB(int,int) ax=" << a << "  bx=" << bx << "\n";
+    }
+    
+    // ... copy, destructor, operators ...
+};
+```
+
+PHÂN TÍCH:
+──────────
+1. ExamB : public ExamA
+   - ExamB kế thừa tất cả public/protected members của ExamA
+   - ax (public) → vẫn public trong ExamB
+   - secret_ (private) → KHÔNG access được trong ExamB
+
+2. ExamB có thể:
+   - Access ax (inherited public member)
+   - Gọi ExamA constructor trong initializer list
+   - Override virtual functions của ExamA
+
+═══════════════════════════════════════════════════════════════════════════════
+CHAPTER 19: CONSTRUCTOR & DESTRUCTOR ORDER ⭐ THEN CHỐT
+═══════════════════════════════════════════════════════════════════════════════
+
+19.1. QUY TẮC VÀNG
+──────────────────
+
+⭐⭐⭐ GHI NHỚ:
+CONSTRUCTION: Base → Derived (Cha → Con)
+DESTRUCTION:  Derived → Base (~Con → ~Cha)
+
+HÌNH DUNG:
+    class Base {};
+    class Derived : public Base {};
+    
+    Derived obj;
+    // 1. Base constructor
+    // 2. Derived constructor
+    
+    // ... use obj ...
+    
+    // 3. Derived destructor
+    // 4. Base destructor
+
+TẠI SAO?
+- Derived cần Base đã được khởi tạo
+- Derived phụ thuộc vào Base
+- Hủy ngược lại: Con trước, Cha sau
+
+19.2. VÍ DỤ CODE TỪ TEST (Gki/test.cpp)
+────────────────────────────────────────
+
+```cpp
+int main() {
+    cout << "\n=== Test 1: Tạo ExamB() ===\n";
+    {
+        ExamB b1;
+    }
+    cout << "Kết thúc scope\n";
+}
+```
+
+OUTPUT:
+```
+=== Test 1: Tạo ExamB() ===
+ExamA()  id=1  ax=0        ← 1. Base constructor
+ExamB()       bx=100       ← 2. Derived constructor
+~ExamB() bx=100            ← 3. Derived destructor
+~ExamA()  ax=0             ← 4. Base destructor
+Kết thúc scope
+```
+
+PHÂN TÍCH TỪNG BƯỚC:
+════════════════════
+
+1. CONSTRUCTION:
+   a. Gọi ExamA() - Base constructor
+      - ax = 0
+      - In "ExamA() id=1 ax=0"
+   
+   b. Gọi ExamB() - Derived constructor
+      - bx = 100
+      - In "ExamB() bx=100"
+
+2. DESTRUCTION (khi ra khỏi scope):
+   a. Gọi ~ExamB() - Derived destructor
+      - In "~ExamB() bx=100"
+   
+   b. Gọi ~ExamA() - Base destructor
+      - In "~ExamA() ax=0"
+
+19.3. VÍ DỤ VỚI THAM SỐ (Gki/test.cpp)
+───────────────────────────────────────
+
+```cpp
+int main() {
+    cout << "\n=== Test 2: ExamB(10, 20) ===\n";
+    {
+        ExamB b2(10, 20);
+    }
+}
+```
+
+OUTPUT:
+```
+=== Test 2: ExamB(10, 20) ===
+ExamA(int)  ax=10          ← 1. Base constructor với tham số
+ExamB(int,int) ax=10 bx=20 ← 2. Derived constructor
+~ExamB() bx=20             ← 3. Derived destructor
+~ExamA()  ax=10            ← 4. Base destructor
+```
+
+CODE CONSTRUCTOR:
+```cpp
+explicit ExamB(int a, int b) : ExamA(a), bx(b) {
+    //                         ^^^^^^^^  ^^^^^^
+    //                         Gọi Base  Init member
+    cout << "ExamB(int,int) ax=" << a << "  bx=" << bx << "\n";
+}
+```
+
+THỨ TỰ KHỞI TẠO:
+1. ExamA(a) - Gọi base constructor trước
+2. bx(b) - Init member của derived
+3. Body của ExamB constructor
+
+19.4. VÍ DỤ VỚI COPY CONSTRUCTOR (Gki/test2.cpp)
+─────────────────────────────────────────────────
+
+```cpp
+class ExamA {
+public:
+    int ax;
+    ExamA() : ax(0) { cout << "A() ax=" << ax << "\n"; }
+    ExamA(int x) : ax(x) { cout << "A(int) ax=" << ax << "\n"; }
+    ExamA(const ExamA& o) : ax(o.ax) { cout << "A(copy) ax=" << ax << "\n"; }
+    virtual ~ExamA() { cout << "~A() ax=" << ax << "\n"; }
+};
+
+class ExamB : public ExamA {
+public:
+    int bx;
+    ExamB() : ExamA(), bx(10) { cout << "B() bx=" << bx << "\n"; }
+    ExamB(int a, int b) : ExamA(a), bx(b) { cout << "B(int,int) bx=" << bx << "\n"; }
+    
+    ExamB(const ExamB& o) : ExamA(o), bx(o.bx) {
+        //                  ^^^^^^^^^  ^^^^^^^^^
+        //                  Copy Base  Copy member
+        cout << "B(copy) bx=" << bx << "\n";
+    }
+    
+    ~ExamB() override { cout << "~B() bx=" << bx << "\n"; }
+};
+
+int main() {
+    ExamB b1(5, 10);
+    cout << "--- Copy b1 ---\n";
+    ExamB b2 = b1;  // Copy constructor
+}
+```
+
+OUTPUT:
+```
+A(int) ax=5            ← 1. Base constructor
+B(int,int) bx=10       ← 2. Derived constructor
+--- Copy b1 ---
+A(copy) ax=5           ← 3. Base COPY constructor
+B(copy) bx=10          ← 4. Derived COPY constructor
+~B() bx=10             ← 5. ~Derived (b2)
+~A() ax=5              ← 6. ~Base (b2)
+~B() bx=10             ← 7. ~Derived (b1)
+~A() ax=5              ← 8. ~Base (b1)
+```
+
+⭐ LƯU Ý COPY CONSTRUCTOR:
+```cpp
+ExamB(const ExamB& o) : ExamA(o), bx(o.bx) {
+    //                  ^^^^^^^^^
+    //                  PHẢI gọi base copy constructor!
+}
+```
+
+Nếu quên gọi ExamA(o):
+```cpp
+ExamB(const ExamB& o) : bx(o.bx) {  // ❌ Quên gọi base copy!
+    // Sẽ gọi ExamA() default constructor thay vì copy
+    // → ax = 0 thay vì ax = o.ax
+}
+```
+
+═══════════════════════════════════════════════════════════════════════════════
+CHAPTER 20: INITIALIZER LIST
+═══════════════════════════════════════════════════════════════════════════════
+
+20.1. KHÁI NIỆM & SYNTAX
+─────────────────────────
+
+ĐỊNH NGHĨA:
+Initializer list khởi tạo members TRƯỚC khi vào body của constructor.
+
+CÚ PHÁP:
+```cpp
+class MyClass {
+    int x, y;
+public:
+    // Initializer list
+    MyClass(int a, int b) : x(a), y(b) {
+        //                  ^^^^^^^^^^^
+        //                  Initializer list
+        // Body của constructor
+    }
+};
+```
+
+20.2. GỌI BASE CONSTRUCTOR
+──────────────────────────
+
+VỚI KẾ THỪA:
+```cpp
+class Base {
+    int value;
+public:
+    Base(int v) : value(v) {}
+};
+
+class Derived : public Base {
+    int extra;
+public:
+    // ✓ ĐÚNG: Gọi base constructor
+    Derived(int v, int e) : Base(v), extra(e) {}
+    //                      ^^^^^^^
+    //                      Gọi base constructor
+};
+```
+
+20.3. LỖI: KHÔNG GỌI BASE CONSTRUCTOR
+──────────────────────────────────────
+
+❌ LỖI THƯỜNG GẶP:
+```cpp
+class Base {
+    int value;
+public:
+    Base(int v) : value(v) {}
+    // KHÔNG có default constructor!
+};
+
+class Derived : public Base {
+    int extra;
+public:
+    // ❌ ERROR: Base không có default constructor
+    Derived(int e) : extra(e) {}
+    // Compiler tự gọi Base(), nhưng không tồn tại!
+};
+```
+
+✓ GIẢI PHÁP:
+```cpp
+// Cách 1: Gọi rõ ràng base constructor
+Derived(int v, int e) : Base(v), extra(e) {}
+
+// Cách 2: Thêm default constructor cho Base
+class Base {
+public:
+    Base() : value(0) {}  // Default constructor
+    Base(int v) : value(v) {}
+};
+```
+
+20.4. THỨ TỰ KHỞI TẠO
+──────────────────────
+
+⭐ QUY TẮC QUAN TRỌNG:
+Thứ tự khởi tạo KHÔNG phụ thuộc thứ tự trong initializer list,
+mà phụ thuộc thứ tự KHAI BÁO trong class!
+
+VÍ DỤ:
+```cpp
+class MyClass {
+    int x, y, z;  // Khai báo theo thứ tự x, y, z
+public:
+    // Khởi tạo theo thứ tự z, y, x (trong initializer list)
+    MyClass(int a, int b, int c) : z(c), y(b), x(a) {}
+    //                             ^^^^^^^^^^^^^^^^^^^^
+    
+    // Nhưng thứ tự THẬT SỰ khởi tạo: x, y, z (theo khai báo!)
+};
+```
+
+VÍ DỤ LỖI:
+```cpp
+class Bad {
+    int x, y;  // x khai báo trước y
+public:
+    Bad(int val) : y(val), x(y) {}
+    //             ^^^^^^^^^^^^
+    //             y = val, x = y
+    
+    // Nhưng x khởi tạo TRƯỚC y (theo khai báo)!
+    // → x = ??? (y chưa khởi tạo)
+    // → Undefined behavior!
+};
+
+✓ ĐÚNG:
+class Good {
+    int x, y;
+public:
+    Good(int val) : x(val), y(x) {}
+    //              ^^^^^^^^^^^^
+    //              x khởi tạo trước, y dùng x
+};
+```
+
+VỚI KẾ THỪA:
+```cpp
+class Base {
+    int b;
+public:
+    Base(int val) : b(val) {}
+};
+
+class Derived : public Base {
+    int d1, d2;
+public:
+    Derived(int a, int b, int c) : d2(c), Base(a), d1(b) {}
+    //                             ^^^^^^^^^^^^^^^^^^^^^
+    
+    // Thứ tự THẬT SỰ:
+    // 1. Base(a) - Base constructor LUÔN TRƯỚC
+    // 2. d1(b) - Member theo thứ tự khai báo
+    // 3. d2(c)
+};
+```
+
+═══════════════════════════════════════════════════════════════════════════════
+CHAPTER 21: VIRTUAL DESTRUCTOR ⭐ CỰC KỲ QUAN TRỌNG
+═══════════════════════════════════════════════════════════════════════════════
+
+21.1. TẠI SAO CẦN VIRTUAL DESTRUCTOR
+─────────────────────────────────────
+
+⭐⭐⭐ QUY TẮC VÀNG:
+Nếu class có thể là BASE CLASS, destructor PHẢI là VIRTUAL!
+
+TẠI SAO?
+- Khi delete qua base pointer, cần gọi derived destructor
+- Nếu destructor KHÔNG virtual → Chỉ gọi base destructor
+- Derived members không được hủy → MEMORY LEAK!
+
+21.2. MEMORY LEAK KHI KHÔNG CÓ VIRTUAL (Gki/test.cpp)
+──────────────────────────────────────────────────────
+
+VÍ DỤ TỪ TEST:
+```cpp
+class ExamA {
+public:
+    int ax;
+    
+    // ⭐ virtual destructor
+    virtual ~ExamA() {
+        cout << "~ExamA() ax=" << ax << "\n";
+    }
+};
+
+class ExamB : public ExamA {
+public:
+    int bx;
+    int* data;  // Dynamic memory
+    
+    ExamB() : ExamA(), bx(100) {
+        data = new int[1000];  // Allocate memory
+    }
+    
+    ~ExamB() {
+        cout << "~ExamB() bx=" << bx << "\n";
+        delete[] data;  // ⭐ Giải phóng memory
+    }
+};
+
+int main() {
+    ExamA* ptr = new ExamB();  // Base pointer to derived object
+    delete ptr;  // Gọi destructor nào?
+}
+```
+
+VỚI VIRTUAL DESTRUCTOR (✓ ĐÚNG):
+```
+~ExamB() bx=100      ← 1. Derived destructor (giải phóng data)
+~ExamA() ax=0        ← 2. Base destructor
+```
+
+KHÔNG VIRTUAL (❌ SAI):
+```cpp
+class ExamA {
+public:
+    ~ExamA() {}  // ❌ KHÔNG virtual!
+};
+
+// delete ptr chỉ gọi:
+~ExamA() ax=0        ← CHỈ base destructor!
+// ~ExamB() KHÔNG được gọi!
+// data KHÔNG được delete[] → MEMORY LEAK!
+```
+
+HÌNH DUNG:
+```
+Memory:
+┌─────────────────────┐
+│ ExamB object        │
+│  - ax (inherited)   │
+│  - bx               │
+│  - data* ─────────┐ │
+└───────────────────┼─┘
+                    ↓
+          ┌────────────────┐
+          │ int[1000]      │ ← LEAKED! Không được delete
+          └────────────────┘
+```
+
+21.3. QUY TẮC: BASE CLASS → VIRTUAL DESTRUCTOR
+───────────────────────────────────────────────
+
+⭐ CHECKLIST:
+□ Class có virtual functions → destructor PHẢI virtual
+□ Class được kế thừa → destructor PHẢI virtual
+□ Polymorphism → destructor PHẢI virtual
+□ Chỉ có final class hoặc không kế thừa → destructor có thể non-virtual
+
+VÍ DỤ:
+```cpp
+// ✓ ĐÚNG: Base class với virtual destructor
+class Base {
+public:
+    virtual ~Base() {}
+    virtual void func() {}
+};
+
+// ❌ SAI: Base class KHÔNG virtual destructor
+class Bad {
+public:
+    ~Bad() {}  // ❌ Nên là virtual!
+    virtual void func() {}
+};
+
+// ✓ OK: Final class (không kế thừa)
+class Final {
+public:
+    ~Final() {}  // OK: Không ai kế thừa
+};
+```
+
+═══════════════════════════════════════════════════════════════════════════════
+CHAPTER 22: VIRTUAL FUNCTIONS
+═══════════════════════════════════════════════════════════════════════════════
+
+22.1. KHÁI NIỆM DYNAMIC BINDING
+────────────────────────────────
+
+ĐỊNH NGHĨA:
+Virtual function cho phép gọi derived class method qua base class pointer.
+
+STATIC BINDING (compile-time):
+```cpp
+class Base {
+public:
+    void func() { cout << "Base"; }
+};
+
+class Derived : public Base {
+public:
+    void func() { cout << "Derived"; }  // Hide Base::func
+};
+
+Base* ptr = new Derived();
+ptr->func();  // "Base" - Gọi Base::func (compile-time)
+```
+
+DYNAMIC BINDING (runtime):
+```cpp
+class Base {
+public:
+    virtual void func() { cout << "Base"; }  // ⭐ virtual
+};
+
+class Derived : public Base {
+public:
+    void func() override { cout << "Derived"; }
+};
+
+Base* ptr = new Derived();
+ptr->func();  // "Derived" - Gọi Derived::func (runtime)
+```
+
+22.2. OVERRIDE KEYWORD
+──────────────────────
+
+⭐ C++11: Dùng override để rõ ràng
+```cpp
+class Base {
+public:
+    virtual void func() {}
+    virtual void func(int) {}
+};
+
+class Derived : public Base {
+public:
+    // ✓ ĐÚNG: override rõ ràng
+    void func() override {}
+    
+    // ❌ ERROR: Signature không khớp
+    void func(double) override {}  // Compile error!
+    
+    // ❌ NGUY HIỂM: Không override, tạo function mới
+    void func(double) {}  // Không lỗi, nhưng KHÔNG override!
+};
+```
+
+ƯU ĐIỂM CỦA override:
+✓ Compiler check signature
+✓ Rõ ràng intent
+✓ Tránh lỗi typo
+
+22.3. VIRTUAL FUNCTION TABLE (vtable)
+──────────────────────────────────────
+
+CÁCH HOẠT ĐỘNG:
+- Mỗi class có virtual functions có vtable
+- vtable lưu pointers đến virtual functions
+- Mỗi object có vptr (virtual pointer) trỏ đến vtable
+
+HÌNH DUNG:
+```
+Base* ptr = new Derived();
+
+Memory:
+┌────────────────────┐
+│ Derived object     │
+│  - vptr ─────────┐ │
+│  - data          │ │
+└──────────────────┼─┘
+                   ↓
+        ┌─────────────────┐
+        │ Derived vtable  │
+        │  - func → Derived::func
+        │  - ~Derived → ~Derived()
+        └─────────────────┘
+
+ptr->func():
+1. Dereference vptr
+2. Tra cứu vtable
+3. Gọi Derived::func
+```
+
+═══════════════════════════════════════════════════════════════════════════════
+CHAPTER 23: POLYMORPHISM
+═══════════════════════════════════════════════════════════════════════════════
+
+23.1. COMPILE-TIME POLYMORPHISM (STATIC)
+─────────────────────────────────────────
+
+2 LOẠI:
+1. Function overloading
+2. Template
+
+VÍ DỤ FUNCTION OVERLOADING:
+```cpp
+void print(int x) { cout << "int: " << x; }
+void print(double x) { cout << "double: " << x; }
+void print(string x) { cout << "string: " << x; }
+
+print(10);      // Gọi print(int) - compile-time
+print(10.5);    // Gọi print(double) - compile-time
+```
+
+VÍ DỤ TEMPLATE:
+```cpp
+template<typename T>
+T max(T a, T b) {
+    return (a > b) ? a : b;
+}
+
+max(10, 20);     // Instantiate max<int> - compile-time
+max(10.5, 20.5); // Instantiate max<double> - compile-time
+```
+
+23.2. RUNTIME POLYMORPHISM (DYNAMIC)
+─────────────────────────────────────
+
+VỚI VIRTUAL FUNCTIONS:
+```cpp
+class Shape {
+public:
+    virtual double area() const = 0;  // Pure virtual
+    virtual void draw() const = 0;
+    virtual ~Shape() {}
+};
+
+class Circle : public Shape {
+    double radius;
+public:
+    Circle(double r) : radius(r) {}
+    
+    double area() const override {
+        return 3.14 * radius * radius;
+    }
+    
+    void draw() const override {
+        cout << "Drawing Circle\n";
+    }
+};
+
+class Rectangle : public Shape {
+    double width, height;
+public:
+    Rectangle(double w, double h) : width(w), height(h) {}
+    
+    double area() const override {
+        return width * height;
+    }
+    
+    void draw() const override {
+        cout << "Drawing Rectangle\n";
+    }
+};
+
+int main() {
+    Shape* shapes[2];
+    shapes[0] = new Circle(5);
+    shapes[1] = new Rectangle(4, 6);
+    
+    for (int i = 0; i < 2; i++) {
+        shapes[i]->draw();         // Runtime polymorphism!
+        cout << shapes[i]->area() << endl;
+        delete shapes[i];
+    }
+}
+```
+
+OUTPUT:
+```
+Drawing Circle
+78.5
+Drawing Rectangle
+24
+```
+
+23.3. UPCASTING (AN TOÀN)
+─────────────────────────
+
+KHÁI NIỆM:
+Chuyển derived pointer/reference sang base pointer/reference.
+
+VÍ DỤ:
+```cpp
+Derived d;
+Base* ptr = &d;     // ✓ Upcasting - An toàn, tự động
+Base& ref = d;      // ✓ Upcasting - An toàn, tự động
+```
+
+LUÔN AN TOÀN:
+- Derived IS-A Base
+- Compiler tự động convert
+- Không cần cast
+
+23.4. DOWNCASTING (DYNAMIC_CAST)
+─────────────────────────────────
+
+KHÁI NIỆM:
+Chuyển base pointer/reference sang derived pointer/reference.
+
+⚠️ NGUY HIỂM: Không phải lúc nào cũng an toàn!
+
+VÍ DỤ:
+```cpp
+Base* ptr = new Derived();
+
+// ✓ ĐÚNG: Dùng dynamic_cast
+Derived* dptr = dynamic_cast<Derived*>(ptr);
+if (dptr != nullptr) {
+    // An toàn: ptr thật sự trỏ đến Derived
+    dptr->derivedMethod();
+}
+
+// ❌ NGUY HIỂM: C-style cast
+Derived* bad = (Derived*)ptr;  // Không check!
+```
+
+dynamic_cast:
+- Return nullptr nếu cast fail (pointer)
+- Throw bad_cast nếu cast fail (reference)
+- Chỉ hoạt động với polymorphic types (có virtual functions)
+
+═══════════════════════════════════════════════════════════════════════════════
+CHAPTER 24: SLICING PROBLEM ⭐ LỖI THƯỜNG GẶP
+═══════════════════════════════════════════════════════════════════════════════
+
+24.1. KHÁI NIỆM SLICING
+───────────────────────
+
+ĐỊNH NGHĨA:
+Slicing xảy ra khi pass derived object BY VALUE sang base parameter.
+Derived-specific members bị "cắt bỏ" (sliced off).
+
+❌ VÍ DỤ LỖI:
+```cpp
+class Base {
+public:
+    int b;
+    Base(int x = 0) : b(x) {}
+    virtual void print() { cout << "Base: " << b; }
+};
+
+class Derived : public Base {
+public:
+    int d;
+    Derived(int x = 0, int y = 0) : Base(x), d(y) {}
+    void print() override { cout << "Derived: " << b << ", " << d; }
+};
+
+void func(Base obj) {  // ❌ Pass by VALUE!
+    obj.print();
+}
+
+int main() {
+    Derived d(10, 20);
+    func(d);  // Slicing happens here!
+}
+```
+
+OUTPUT:
+```
+Base: 10  ← ❌ Gọi Base::print, không phải Derived::print!
+```
+
+PHÂN TÍCH:
+──────────
+1. func(d): Pass Derived by value
+2. Chỉ copy Base part của d
+3. Derived part (d = 20) bị "sliced off"
+4. obj là Base object, không phải Derived
+5. obj.print() gọi Base::print (no polymorphism!)
+
+HÌNH DUNG:
+```
+Original:
+┌────────────────┐
+│ Derived d      │
+│  Base part:    │
+│    b = 10      │
+│  Derived part: │
+│    d = 20      │ ← Bị cắt bỏ!
+└────────────────┘
+
+After pass by value:
+┌────────────────┐
+│ Base obj       │
+│    b = 10      │
+└────────────────┘
+```
+
+24.2. GIẢI PHÁP: PASS BY REFERENCE/POINTER
+───────────────────────────────────────────
+
+✓ GIẢI PHÁP 1: Pass by reference
+```cpp
+void func(Base& obj) {  // ✓ Pass by REFERENCE
+    obj.print();
+}
+
+int main() {
+    Derived d(10, 20);
+    func(d);  // No slicing!
+}
+
+OUTPUT:
+Derived: 10, 20  ← ✓ Polymorphism works!
+```
+
+✓ GIẢI PHÁP 2: Pass by pointer
+```cpp
+void func(Base* obj) {  // ✓ Pass by POINTER
+    obj->print();
+}
+
+int main() {
+    Derived d(10, 20);
+    func(&d);  // No slicing!
+}
+
+OUTPUT:
+Derived: 10, 20  ← ✓ Polymorphism works!
+```
+
+⭐ QUY TẮC:
+- Pass by value → Slicing, no polymorphism
+- Pass by reference/pointer → No slicing, polymorphism works
+
+═══════════════════════════════════════════════════════════════════════════════
+CHAPTER 25: ĐA KẾ THỪA (MULTIPLE INHERITANCE)
+═══════════════════════════════════════════════════════════════════════════════
+
+25.1. KHÁI NIỆM & SYNTAX
+─────────────────────────
+
+ĐỊNH NGHĨA:
+Class kế thừa từ NHIỀU base classes.
+
+CÚ PHÁP:
+```cpp
+class Base1 {
+public:
+    int b1;
+    Base1(int x = 0) : b1(x) {}
+};
+
+class Base2 {
+public:
+    int b2;
+    Base2(int y = 0) : b2(y) {}
+};
+
+class Derived : public Base1, public Base2 {
+    //              ^^^^^^^^^^^^^^^^^^^^^^
+    //              Kế thừa từ 2 classes
+public:
+    int d;
+    Derived(int x, int y, int z) : Base1(x), Base2(y), d(z) {}
+};
+```
+
+25.2. CONSTRUCTOR/DESTRUCTOR ORDER
+───────────────────────────────────
+
+QUY TẮC:
+- Construction: Base classes theo thứ tự khai báo, rồi Derived
+- Destruction: Ngược lại
+
+VÍ DỤ:
+```cpp
+class A {
+public:
+    A() { cout << "A() "; }
+    ~A() { cout << "~A() "; }
+};
+
+class B {
+public:
+    B() { cout << "B() "; }
+    ~B() { cout << "~B() "; }
+};
+
+class C : public A, public B {
+    //        ^^^^^^^^^^^^
+    //        Thứ tự: A trước, B sau
+public:
+    C() { cout << "C() "; }
+    ~C() { cout << "~C() "; }
+};
+
+int main() {
+    C obj;
+}
+
+OUTPUT:
+A() B() C() ~C() ~B() ~A()
+```
+
+25.3. DIAMOND PROBLEM
+─────────────────────
+
+KHÁI NIỆM:
+Khi Derived kế thừa từ 2 classes, cả 2 đều kế thừa từ cùng 1 Base.
+
+VÍ DỤ:
+```
+      Base
+      /  \
+     A    B
+      \  /
+    Derived
+```
+
+CODE:
+```cpp
+class Base {
+public:
+    int value;
+    Base(int v = 0) : value(v) {}
+};
+
+class A : public Base {
+public:
+    A(int v = 0) : Base(v) {}
+};
+
+class B : public Base {
+public:
+    B(int v = 0) : Base(v) {}
+};
+
+class Derived : public A, public B {
+public:
+    Derived(int a, int b) : A(a), B(b) {}
+};
+
+int main() {
+    Derived d(10, 20);
+    
+    // ❌ AMBIGUOUS: value từ A hay B?
+    // cout << d.value;  // ERROR!
+    
+    // ✓ PHẢI chỉ rõ:
+    cout << d.A::value;  // 10
+    cout << d.B::value;  // 20
+}
+```
+
+PROBLEM:
+- Derived có 2 copies của Base (qua A và qua B)
+- Ambiguity khi access Base members
+
+25.4. VIRTUAL INHERITANCE
+─────────────────────────
+
+GIẢI PHÁP:
+Dùng virtual inheritance để chỉ có 1 copy của Base.
+
+```cpp
+class Base {
+public:
+    int value;
+    Base(int v = 0) : value(v) { cout << "Base(" << v << ")\n"; }
+};
+
+class A : virtual public Base {  // ⭐ virtual
+    //    ^^^^^^^
+public:
+    A(int v = 0) : Base(v) {}
+};
+
+class B : virtual public Base {  // ⭐ virtual
+    //    ^^^^^^^
+public:
+    B(int v = 0) : Base(v) {}
+};
+
+class Derived : public A, public B {
+public:
+    Derived(int v) : Base(v), A(v), B(v) {}
+    //               ^^^^^^^
+    //               Derived PHẢI gọi Base constructor!
+};
+
+int main() {
+    Derived d(42);
+    cout << d.value;  // ✓ OK: Chỉ có 1 value
+}
+
+OUTPUT:
+Base(42)
+42
+```
+
+⭐ LƯU Ý:
+- virtual inheritance → Chỉ 1 copy của Base
+- Derived class PHẢI gọi Base constructor
+- Tốn thêm memory và overhead
+
+═══════════════════════════════════════════════════════════════════════════════
+CHAPTER 26: OPERATOR OVERLOADING VỚI INHERITANCE
+═══════════════════════════════════════════════════════════════════════════════
+
+26.1. KẾ THỪA OPERATORS (Gki/test2.cpp)
+────────────────────────────────────────
+
+VÍ DỤ TỪ TEST:
+```cpp
+class ExamA {
+public:
+    int ax;
+    ExamA(int x = 0) : ax(x) {}
+    
+    // Comparison operator
+    bool operator<(const ExamA& rhs) const {
+        return ax < rhs.ax;
+    }
+    
+    // Stream operator
+    friend ostream& operator<<(ostream& os, const ExamA& a) {
+        return os << "[A ax=" << a.ax << "]";
+    }
+};
+
+class ExamB : public ExamA {
+public:
+    int bx;
+    ExamB(int a = 0, int b = 0) : ExamA(a), bx(b) {}
+    
+    // ⭐ ExamB KẾ THỪA operator< từ ExamA
+    // Có thể dùng trực tiếp:
+    // ExamB b1(10, 20), b2(5, 30);
+    // if (b1 < b2) { ... }  // So sánh ax
+};
+```
+
+26.2. OVERRIDE OPERATORS CHO DERIVED CLASS
+───────────────────────────────────────────
+
+VÍ DỤ:
+```cpp
+class ExamB : public ExamA {
+public:
+    int bx;
+    ExamB(int a = 0, int b = 0) : ExamA(a), bx(b) {}
+    
+    // Override operator< để so sánh cả ax và bx
+    bool operator<(const ExamB& rhs) const {
+        if (ax != rhs.ax) return ax < rhs.ax;  // So sánh ax trước
+        return bx < rhs.bx;  // Nếu ax bằng nhau, so sánh bx
+    }
+    
+    // Override stream operator
+    friend ostream& operator<<(ostream& os, const ExamB& b) {
+        return os << static_cast<const ExamA&>(b)  // ⭐ Gọi base operator
+                  << " [B bx=" << b.bx << "]";
+    }
+};
+```
+
+26.3. GỌI BASE CLASS OPERATOR (Gki/test2.cpp)
+──────────────────────────────────────────────
+
+VÍ DỤ TỪ TEST:
+```cpp
+class ExamB : public ExamA {
+public:
+    int bx;
+    
+    ExamB& operator=(const ExamB& o) {
+        cout << "B::operator=\n";
+        ExamA::operator=(o);  // ⭐ Gọi base operator= trước
+        bx = o.bx;            // Rồi copy member của B
+        return *this;
+    }
+    
+    friend ostream& operator<<(ostream& os, const ExamB& b) {
+        // Cast to base, gọi base operator<<
+        return os << static_cast<const ExamA&>(b)
+                  << " [B bx=" << b.bx << "]";
+    }
+};
+
+int main() {
+    ExamB b1(10, 20), b2;
+    b2 = b1;
+    cout << b2 << endl;
+}
+
+OUTPUT:
+B::operator=
+A::operator= from 10
+[A ax=10] [B bx=20]
+```
+
+═══════════════════════════════════════════════════════════════════════════════
+
+🎯 TỔNG KẾT PHẦN III: INHERITANCE & POLYMORPHISM
+═══════════════════════════════════════════════
+
+CHECKLIST QUAN TRỌNG:
+□ Construction order: Base → Derived
+□ Destruction order: ~Derived → ~Base
+□ Virtual destructor PHẢI có nếu class được kế thừa
+□ Initializer list: Gọi base constructor trước members
+□ Copy constructor: Phải gọi base copy constructor
+□ Virtual functions cho runtime polymorphism
+□ Dùng override keyword để rõ ràng
+□ Pass by reference/pointer để tránh slicing
+□ Upcasting luôn an toàn, downcasting cần dynamic_cast
+□ Multiple inheritance: Cẩn thận diamond problem
+□ Virtual inheritance giải quyết diamond problem
+□ Operator overloading: Gọi base operators khi override
+
+ĐÃ HỌC TỪ CODE TEST:
+✓ Gki/test.cpp: Constructor/destructor order, virtual destructor
+✓ Gki/test2.cpp: Copy constructor, operators với inheritance
+✓ Gki/test3.cpp: Declare/define separation, virtual functions
+
+═══════════════════════════════════════════════════════════════════════════════
+
+TIẾP TỤC VỚI PHẦN IV: ADVANCED CONCEPTS
+Xem file Part4_Advanced_Concepts.txt
+
+════════════════════════════════════════════════════════════════════════════════
