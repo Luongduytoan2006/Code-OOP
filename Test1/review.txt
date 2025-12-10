@@ -1,0 +1,849 @@
+================================================================================
+                    TÀI LIỆU ÔN TẬP OOP - TEST 1
+              C++ FUNDAMENTALS & BASIC CONCEPTS
+================================================================================
+
+MỤC LỤC:
+1. REFERENCES (THAM CHIẾU)
+2. POINTERS (CON TRỎ)
+3. SIZEOF OPERATOR
+4. DEFAULT PARAMETERS
+5. PASS BY VALUE/REFERENCE/POINTER
+6. TYPE PROMOTION & CONVERSION
+7. CÁC LỖI THƯỜNG GẶP
+8. TIPS & TRICKS
+
+================================================================================
+1. REFERENCES (THAM CHIẾU)
+================================================================================
+
+1.1. KHÁI NIỆM CƠ BẢN
+----------------------
+Reference là ALIAS (bí danh) của một biến đã tồn tại.
+
+CÚ PHÁP:
+    int x = 10;
+    int& ref = x;  // ref là bí danh của x
+    
+    ref = 20;      // x cũng thành 20
+    cout << x;     // 20
+
+ĐẶC ĐIỂM:
+✓ PHẢI KHỞI TẠO khi khai báo
+✓ KHÔNG THỂ THAY ĐỔI sau khi khởi tạo (không thể re-bind)
+✓ KHÔNG TỒN TẠI ĐỘC LẬP (luôn tham chiếu đến biến khác)
+
+1.2. REFERENCE VS POINTER
+-------------------------
+┌─────────────────┬──────────────┬───────────────┐
+│ ĐẶC ĐIỂM        │ REFERENCE    │ POINTER       │
+├─────────────────┼──────────────┼───────────────┤
+│ Phải khởi tạo   │ Bắt buộc     │ Không bắt buộc│
+│ Thay đổi target │ Không thể    │ Có thể        │
+│ Null            │ Không thể    │ Có thể        │
+│ Cú pháp         │ Đơn giản     │ Dùng * và &   │
+│ Overhead        │ Không        │ Có (size)     │
+└─────────────────┴──────────────┴───────────────┘
+
+VÍ DỤ TỪ TEST (on_1.cpp):
+
+    int x = 10;
+    int& ref = x;    // Reference
+    int* ptr = &x;   // Pointer
+    
+    ref = 20;        // x = 20
+    *ptr = 30;       // x = 30
+    
+    int y = 40;
+    ref = y;         // x = 40 (KHÔNG phải ref tham chiếu y)
+    ptr = &y;        // ptr giờ trỏ đến y (ĐỔI TARGET)
+
+1.3. REFERENCE PARAMETERS
+-------------------------
+VÍ DỤ TỪ TEST (on_32.cpp):
+
+    void swap(int& a, int& b) {
+        int temp = a;
+        a = b;
+        b = temp;
+    }
+    
+    int main() {
+        int x = 5, y = 10;
+        swap(x, y);
+        cout << x << y;  // 10 5 (đã đổi chỗ)
+    }
+
+TẠI SAO DÙNG REFERENCE?
+✓ Tránh copy (hiệu quả với objects lớn)
+✓ Thay đổi biến gốc
+✓ Cú pháp đơn giản hơn pointer
+
+1.4. CONST REFERENCE
+--------------------
+VÍ DỤ TỪ TEST (on_33.cpp):
+
+    void printValue(const int& x) {
+        cout << x;
+        // x = 10;  // COMPILE ERROR! Không thể thay đổi
+    }
+    
+    int main() {
+        int val = 5;
+        printValue(val);      // OK
+        printValue(10);       // OK: const ref có thể bind với rvalue
+    }
+
+ƯU ĐIỂM:
+✓ Tránh copy (hiệu quả)
+✓ An toàn (không thay đổi giá trị)
+✓ Có thể nhận rvalue (temporary)
+
+1.5. REFERENCE TO POINTER
+--------------------------
+VÍ DỤ TỪ TEST (on_34.cpp):
+
+    void allocate(int*& ptr, int size) {
+        ptr = new int[size];  // Thay đổi pointer gốc
+    }
+    
+    int main() {
+        int* p = nullptr;
+        allocate(p, 5);  // p giờ trỏ đến array mới
+        p[0] = 10;       // OK
+        delete[] p;
+    }
+
+KHI NÀO DÙNG?
+- Muốn thay đổi pointer trong function
+- Tránh dùng double pointer (int**)
+
+1.6. DANGLING REFERENCE
+-----------------------
+❌ LỖI NGUY HIỂM:
+
+    int& getReference() {
+        int x = 10;
+        return x;  // NGUY HIỂM! x bị hủy sau khi return
+    }
+    
+    int main() {
+        int& ref = getReference();
+        cout << ref;  // UNDEFINED BEHAVIOR!
+    }
+
+QUY TẮC:
+❌ KHÔNG return reference đến local variable
+✓ Return reference đến:
+  - Static variable
+  - Global variable
+  - Member variable
+  - Parameter (reference)
+
+================================================================================
+2. POINTERS (CON TRỎ)
+================================================================================
+
+2.1. KHÁI NIỆM CƠ BẢN
+----------------------
+Pointer là biến lưu địa chỉ của biến khác.
+
+CÚ PHÁP:
+    int x = 10;
+    int* ptr = &x;  // ptr lưu địa chỉ của x
+    
+    cout << ptr;    // Địa chỉ của x
+    cout << *ptr;   // 10 (giá trị tại địa chỉ)
+
+TOÁN TỬ:
+- & : Address-of operator (lấy địa chỉ)
+- * : Dereference operator (lấy giá trị)
+
+2.2. POINTER ARITHMETIC
+-----------------------
+VÍ DỤ TỪ TEST (on_36.cpp):
+
+    int arr[5] = {10, 20, 30, 40, 50};
+    int* ptr = arr;  // ptr trỏ đến arr[0]
+    
+    cout << *ptr;       // 10
+    cout << *(ptr+1);   // 20
+    cout << ptr[2];     // 30 (tương đương *(ptr+2))
+    
+    ptr++;              // ptr giờ trỏ đến arr[1]
+    cout << *ptr;       // 20
+
+QUY TẮC:
+- ptr + n → Nhảy n phần tử (n * sizeof(type))
+- ptr++ → Nhảy 1 phần tử
+- ptr - ptr2 → Số phần tử giữa 2 con trỏ
+
+2.3. NULL POINTER
+-----------------
+    int* ptr = nullptr;  // C++11
+    int* ptr2 = NULL;    // C-style
+    int* ptr3 = 0;       // Old style
+    
+    if (ptr == nullptr) {
+        cout << "Null pointer";
+    }
+
+BEST PRACTICE:
+✓ Khởi tạo pointer với nullptr
+✓ Kiểm tra nullptr trước khi dereference
+✓ Gán nullptr sau khi delete
+
+2.4. DYNAMIC MEMORY
+-------------------
+VÍ DỤ TỪ TEST (on_37.cpp):
+
+    int* ptr = new int(10);        // Cấp phát 1 int
+    int* arr = new int[5];         // Cấp phát array
+    
+    cout << *ptr;                  // 10
+    arr[0] = 100;
+    
+    delete ptr;                    // Giải phóng 1 object
+    delete[] arr;                  // Giải phóng array
+    
+    ptr = nullptr;                 // Avoid dangling pointer
+
+QUY TẮC:
+✓ new → delete
+✓ new[] → delete[]
+✓ Gán nullptr sau delete
+✓ Không delete 2 lần
+
+2.5. POINTER TO POINTER
+-----------------------
+VÍ DỤ:
+    int x = 10;
+    int* ptr = &x;      // ptr trỏ đến x
+    int** pptr = &ptr;  // pptr trỏ đến ptr
+    
+    cout << **pptr;     // 10
+
+ỨNG DỤNG:
+- Dynamic 2D arrays
+- Function thay đổi pointer
+- Linked structures
+
+2.6. FUNCTION POINTER
+---------------------
+VÍ DỤ TỪ TEST (on_39.cpp):
+
+    int add(int a, int b) {
+        return a + b;
+    }
+    
+    int main() {
+        int (*funcPtr)(int, int) = add;
+        cout << funcPtr(5, 3);  // 8
+    }
+
+ỨNG DỤNG:
+- Callback functions
+- Event handlers
+- Function tables
+
+================================================================================
+3. SIZEOF OPERATOR
+================================================================================
+
+3.1. KHÁI NIỆM
+--------------
+sizeof trả về kích thước (bytes) của type hoặc variable.
+
+CÚ PHÁP:
+    sizeof(type)
+    sizeof(variable)
+    sizeof variable  // Không cần ()
+
+VÍ DỤ:
+    cout << sizeof(int);      // 4 (thường)
+    cout << sizeof(char);     // 1
+    cout << sizeof(double);   // 8
+
+3.2. SIZEOF VỚI ARRAY
+---------------------
+VÍ DỤ TỪ TEST (on_40.cpp):
+
+    int arr[10];
+    cout << sizeof(arr);        // 40 (10 * sizeof(int))
+    cout << sizeof(arr[0]);     // 4
+    
+    int length = sizeof(arr) / sizeof(arr[0]);  // 10
+
+LƯU Ý:
+    void func(int arr[]) {
+        cout << sizeof(arr);  // SIZE CỦA POINTER! (4 or 8)
+    }
+    
+    int main() {
+        int arr[10];
+        func(arr);  // Array decay thành pointer
+
+3.3. SIZEOF VỚI POINTER
+-----------------------
+VÍ DỤ TỪ TEST (on_43.cpp):
+
+    int x = 10;
+    int* ptr = &x;
+    
+    cout << sizeof(ptr);   // 4 (32-bit) hoặc 8 (64-bit)
+    cout << sizeof(*ptr);  // 4 (sizeof(int))
+
+3.4. SIZEOF KHÔNG CÓ SIDE EFFECTS
+----------------------------------
+VÍ DỤ TỪ TEST (on_44.cpp):
+
+    int x = 5;
+    sizeof(x++);  // sizeof KHÔNG THỰC HIỆN x++
+    cout << x;    // 5 (không thay đổi)
+
+GIẢI THÍCH:
+- sizeof là compile-time operator
+- Chỉ tính kích thước, không evaluate expression
+
+VÍ DỤ QUAN TRỌNG TỪ TEST:
+
+    int x = 5;
+    int y = sizeof(x++);
+    cout << x << y;  // 54 (x vẫn là 5, y = sizeof(int) = 4)
+
+3.5. SIZEOF VỚI CLASS
+---------------------
+VÍ DỤ TỪ TEST (on_45.cpp):
+
+    class Base {
+        int x;      // 4 bytes
+        double y;   // 8 bytes
+    };
+    
+    cout << sizeof(Base);  // 16 (có padding/alignment)
+
+PADDING:
+    class Example {
+        char c;   // 1 byte
+        int i;    // 4 bytes
+        // 3 bytes padding sau c
+    };
+    
+    sizeof(Example) = 8 (không phải 5!)
+
+3.6. SIZEOF VỚI EMPTY CLASS
+----------------------------
+    class Empty {};
+    cout << sizeof(Empty);  // 1 (không phải 0!)
+
+LÝ DO:
+- Mỗi object cần địa chỉ riêng
+- Minimum size = 1 byte
+
+================================================================================
+4. DEFAULT PARAMETERS
+================================================================================
+
+4.1. KHÁI NIỆM
+--------------
+Default parameters cho phép hàm có giá trị mặc định cho tham số.
+
+CÚ PHÁP:
+    void func(int x, int y = 10, int z = 5) {
+        cout << x + y + z;
+    }
+    
+    func(1);        // x=1, y=10, z=5 → 16
+    func(1, 2);     // x=1, y=2, z=5 → 8
+    func(1, 2, 3);  // x=1, y=2, z=3 → 6
+
+4.2. QUY TẮC
+------------
+VÍ DỤ TỪ TEST (on_46.cpp):
+
+✓ ĐÚNG:
+    void func(int x, int y = 10, int z = 5);
+
+❌ SAI:
+    void func(int x = 1, int y, int z);  // Default phải ở cuối
+    void func(int x, int y = 10, int z); // z không có default
+
+QUY TẮC:
+✓ Default parameters phải ở CUỐI danh sách
+✓ Không thể bỏ qua parameter ở giữa
+✓ Chỉ khai báo default trong declaration (không trong definition)
+
+4.3. TRƯỜNG HỢP ĐẶC BIỆT
+-------------------------
+VÍ DỤ TỪ TEST (on_47.cpp):
+
+    void func(int x, int y = x) {  // LỖI! Không thể dùng x
+        cout << x + y;
+    }
+
+✓ ĐÚNG:
+    void func(int x, int y = 10) {
+        cout << x + y;
+    }
+
+4.4. DEFAULT VỚI OVERLOADING
+-----------------------------
+VÍ DỤ:
+    void func(int x);
+    void func(int x, int y = 10);
+    
+    func(5);  // AMBIGUOUS! Cả 2 hàm đều match
+
+GIẢI PHÁP:
+- Tránh dùng default parameter với overloaded functions
+- Hoặc đảm bảo không có ambiguity
+
+================================================================================
+5. PASS BY VALUE/REFERENCE/POINTER
+================================================================================
+
+5.1. PASS BY VALUE
+------------------
+VÍ DỤ TỪ TEST (on_49.cpp):
+
+    void func(int x) {  // Copy x
+        x = 10;
+    }
+    
+    int main() {
+        int a = 5;
+        func(a);
+        cout << a;  // 5 (không thay đổi)
+    }
+
+ĐẶC ĐIỂM:
+- Tạo COPY của biến
+- Thay đổi trong function KHÔNG ảnh hưởng biến gốc
+- COSTLY với objects lớn
+
+5.2. PASS BY REFERENCE
+----------------------
+VÍ DỤ TỪ TEST (on_50.cpp):
+
+    void func(int& x) {  // Reference
+        x = 10;
+    }
+    
+    int main() {
+        int a = 5;
+        func(a);
+        cout << a;  // 10 (đã thay đổi)
+    }
+
+ĐẶC ĐIỂM:
+- KHÔNG tạo copy
+- Thay đổi trong function ẢNH HƯỞNG biến gốc
+- Hiệu quả với objects lớn
+
+5.3. PASS BY POINTER
+--------------------
+VÍ DỤ:
+    void func(int* ptr) {
+        *ptr = 10;
+    }
+    
+    int main() {
+        int a = 5;
+        func(&a);
+        cout << a;  // 10
+    }
+
+ĐẶC ĐIỂM:
+- Truyền địa chỉ
+- Có thể nullptr
+- Cú pháp phức tạp hơn reference
+
+5.4. SO SÁNH
+------------
+┌──────────────┬──────────┬───────────┬────────────┐
+│              │ Value    │ Reference │ Pointer    │
+├──────────────┼──────────┼───────────┼────────────┤
+│ Copy         │ Có       │ Không     │ Copy ptr   │
+│ Modify gốc   │ Không    │ Có        │ Có         │
+│ Null         │ N/A      │ Không thể │ Có thể     │
+│ Syntax       │ Đơn giản │ Đơn giản  │ Phức tạp   │
+│ Overhead     │ High     │ Low       │ Low        │
+└──────────────┴──────────┴───────────┴────────────┘
+
+5.5. CONST REFERENCE
+--------------------
+    void print(const int& x) {
+        cout << x;
+        // x = 10;  // ERROR! Không thể thay đổi
+    }
+
+ƯU ĐIỂM:
+✓ Không copy (hiệu quả)
+✓ Không thay đổi (an toàn)
+✓ Có thể nhận temporary
+
+KHI NÀO DÙNG?
+- Function chỉ đọc giá trị
+- Tham số là object lớn
+- Không muốn copy
+
+5.6. RETURN BY VALUE/REFERENCE
+-------------------------------
+VÍ DỤ TỪ TEST:
+
+A) Return by value:
+    int getMax(int a, int b) {
+        return (a > b) ? a : b;  // Copy
+    }
+
+B) Return by reference:
+    int& getElement(int arr[], int index) {
+        return arr[index];  // Reference
+    }
+    
+    int main() {
+        int arr[5] = {1,2,3,4,5};
+        getElement(arr, 0) = 10;  // arr[0] = 10
+    }
+
+CẢNH BÁO:
+❌ KHÔNG return reference đến local variable!
+
+    int& func() {
+        int x = 10;
+        return x;  // DANGLING REFERENCE!
+    }
+
+================================================================================
+6. TYPE PROMOTION & CONVERSION
+================================================================================
+
+6.1. IMPLICIT TYPE CONVERSION
+------------------------------
+VÍ DỤ:
+    int x = 5;
+    double y = x;  // int → double (widening)
+    
+    double z = 3.14;
+    int w = z;     // double → int (narrowing, mất dữ liệu)
+
+6.2. TYPE PROMOTION IN EXPRESSIONS
+-----------------------------------
+VÍ DỤ TỪ TEST:
+
+    char c = 'A';  // ASCII 65
+    int result = c + 1;  // char → int, result = 66
+    
+    cout << result;  // 66
+
+QUY TẮC PROMOTION:
+    char, short → int
+    int → long → long long
+    float → double
+
+6.3. TYPE CONVERSION WITH FUNCTIONS
+------------------------------------
+VÍ DỤ:
+    void func(double x) {
+        cout << x;
+    }
+    
+    int main() {
+        func(5);  // int → double (implicit conversion)
+    }
+
+6.4. EXPLICIT CAST
+------------------
+    double x = 3.14;
+    int y = (int)x;           // C-style cast
+    int z = static_cast<int>(x);  // C++ style
+
+================================================================================
+7. CÁC LỖI THƯỜNG GẶP
+================================================================================
+
+7.1. CONFUSING REFERENCE WITH POINTER
+--------------------------------------
+❌ SAI:
+    int x = 10;
+    int& ref = &x;  // LỖI! &x là địa chỉ (int*), không phải int
+
+✓ ĐÚNG:
+    int& ref = x;   // ref tham chiếu x
+
+7.2. DANGLING REFERENCE/POINTER
+--------------------------------
+❌ SAI:
+    int& getRef() {
+        int x = 10;
+        return x;  // x bị hủy sau return
+    }
+
+✓ ĐÚNG:
+    int& getRef(int& x) {
+        return x;  // x tồn tại ngoài function
+    }
+
+7.3. SIZEOF SIDE EFFECTS
+-------------------------
+❌ NHẦM TƯ DUY:
+    int x = 5;
+    sizeof(x++);  // x++ KHÔNG được thực hiện
+    // x vẫn là 5
+
+7.4. ARRAY DECAY
+----------------
+    void func(int arr[]) {
+        int size = sizeof(arr) / sizeof(arr[0]);  // SAI!
+        // arr decay thành pointer, sizeof(arr) = sizeof(pointer)
+    }
+
+✓ ĐÚNG:
+    void func(int arr[], int size) {
+        // Truyền size như tham số
+    }
+
+7.5. DELETE SAI CÁCH
+--------------------
+❌ SAI:
+    int* arr = new int[10];
+    delete arr;  // Nên dùng delete[]
+
+✓ ĐÚNG:
+    int* arr = new int[10];
+    delete[] arr;
+
+7.6. DEFAULT PARAMETER ORDER
+-----------------------------
+❌ SAI:
+    void func(int x = 10, int y);  // Default phải ở cuối
+
+✓ ĐÚNG:
+    void func(int x, int y = 10);
+
+7.7. MISSING nullptr CHECK
+---------------------------
+❌ SAI:
+    int* ptr = nullptr;
+    *ptr = 10;  // CRASH! Dereference null pointer
+
+✓ ĐÚNG:
+    int* ptr = nullptr;
+    if (ptr != nullptr) {
+        *ptr = 10;
+    }
+
+================================================================================
+8. TIPS & TRICKS
+================================================================================
+
+8.1. REFERENCE BEST PRACTICES
+------------------------------
+✓ Dùng const reference cho parameters (tránh copy)
+✓ Return reference cho member variables
+❌ Không return reference đến local variables
+✓ Prefer reference over pointer (trừ khi cần nullptr)
+
+PATTERN:
+    // Read-only parameter
+    void print(const MyClass& obj);
+    
+    // Modify parameter
+    void modify(MyClass& obj);
+    
+    // Return member
+    int& getValue() { return value; }
+
+8.2. POINTER BEST PRACTICES
+----------------------------
+✓ Khởi tạo với nullptr
+✓ Check nullptr trước dereference
+✓ Gán nullptr sau delete
+✓ new → delete, new[] → delete[]
+
+PATTERN:
+    int* ptr = nullptr;
+    ptr = new int(10);
+    if (ptr != nullptr) {
+        *ptr = 20;
+    }
+    delete ptr;
+    ptr = nullptr;
+
+8.3. SIZEOF TIPS
+----------------
+✓ sizeof không có side effects
+✓ sizeof(array) ≠ sizeof(pointer)
+✓ sizeof hoạt động compile-time
+
+CÔNG THỨC:
+    // Array length
+    int len = sizeof(arr) / sizeof(arr[0]);
+    
+    // Pointer size (architecture dependent)
+    sizeof(void*) = 4 (32-bit) or 8 (64-bit)
+
+8.4. DEFAULT PARAMETERS TIPS
+-----------------------------
+✓ Default parameters ở cuối
+✓ Chỉ khai báo trong declaration
+❌ Tránh dùng với overloading
+
+PATTERN:
+    // In header file
+    void func(int x, int y = 10, int z = 5);
+    
+    // In source file
+    void func(int x, int y, int z) {
+        // Implementation
+    }
+
+8.5. PASS BY CHECKLIST
+----------------------
+□ Function thay đổi argument? → Reference/Pointer
+□ Function chỉ đọc? → Const reference
+□ Argument nhỏ (int, char)? → By value
+□ Argument lớn (class, struct)? → Reference
+□ Cần nullptr? → Pointer
+□ Muốn syntax đơn giản? → Reference
+
+8.6. QUICK REFERENCE TABLE
+---------------------------
+┌────────────────┬──────────────┬───────────────┐
+│ SCENARIO       │ RECOMMENDED  │ REASON        │
+├────────────────┼──────────────┼───────────────┤
+│ Read only      │ const T&     │ No copy, safe │
+│ Modify         │ T&           │ Direct access │
+│ Small type     │ T            │ Simple        │
+│ Large type     │ const T&     │ Efficient     │
+│ Optional       │ T*           │ Can be null   │
+│ Array          │ T*           │ Decay to ptr  │
+│ Return member  │ T&           │ Direct access │
+│ Return local   │ T            │ Avoid dangling│
+└────────────────┴──────────────┴───────────────┘
+
+8.7. COMMON PATTERNS
+--------------------
+
+PATTERN 1: Swap using reference
+    void swap(int& a, int& b) {
+        int temp = a;
+        a = b;
+        b = temp;
+    }
+
+PATTERN 2: Array parameter
+    void processArray(int arr[], int size) {
+        for (int i = 0; i < size; i++) {
+            cout << arr[i];
+        }
+    }
+
+PATTERN 3: Optional parameter
+    void func(int* ptr = nullptr) {
+        if (ptr != nullptr) {
+            *ptr = 10;
+        }
+    }
+
+PATTERN 4: Getter/Setter
+    class MyClass {
+        int value;
+    public:
+        int getValue() const { return value; }
+        void setValue(int v) { value = v; }
+        int& getRef() { return value; }
+    };
+
+8.8. DEBUG CHECKLIST
+--------------------
+□ Reference được khởi tạo?
+□ Pointer được kiểm tra nullptr?
+□ sizeof có side effects? (Không!)
+□ Array decay trong function?
+□ Default parameters đúng thứ tự?
+□ Return reference an toàn?
+□ Delete đúng cách (delete vs delete[])?
+□ Memory leaks? (new có delete?)
+
+8.9. COMPILATION FLAGS
+----------------------
+    // Kiểm tra warnings
+    g++ -Wall -Wextra -Werror file.cpp
+    
+    // Optimization
+    g++ -O2 file.cpp
+    
+    // Debug
+    g++ -g file.cpp
+
+8.10. MEMORY MANAGEMENT PATTERN
+--------------------------------
+    class Resource {
+        int* data;
+    public:
+        // Constructor
+        Resource(int size) {
+            data = new int[size];
+        }
+        
+        // Destructor
+        ~Resource() {
+            delete[] data;
+            data = nullptr;
+        }
+        
+        // Copy constructor
+        Resource(const Resource& other) {
+            // Deep copy
+        }
+        
+        // Assignment operator
+        Resource& operator=(const Resource& other) {
+            if (this != &other) {
+                delete[] data;
+                // Deep copy
+            }
+            return *this;
+        }
+    };
+
+================================================================================
+KẾT LUẬN
+================================================================================
+
+TEST 1 TẬP TRUNG VÀO:
+✅ References (30%)
+✅ Pointers (25%)
+✅ sizeof operator (20%)
+✅ Default parameters (15%)
+✅ Pass by value/reference (10%)
+
+ĐIỂM THEN CHỐT CẦN NHỚ:
+1. Reference = alias, không thể re-bind
+2. Pointer = địa chỉ, có thể nullptr
+3. sizeof không có side effects
+4. Default parameters phải ở cuối
+5. Pass by reference cho objects lớn
+
+CÁC LỖI THƯỜNG GẶP:
+- Dangling reference/pointer
+- Array decay trong function
+- sizeof với side effects (nhầm tư duy)
+- Delete sai cách (delete vs delete[])
+- Default parameter order sai
+
+LUYỆN TẬP:
+- Viết function swap, copy, compare
+- Practice pointer arithmetic
+- Debug memory issues
+- Hiểu sizeof với arrays, pointers, classes
+
+BEST PRACTICES:
+- Prefer reference over pointer
+- Always initialize pointers
+- Check nullptr before dereference
+- Use const reference for read-only
+- Return by value for local variables
+
+CHÚC BẠN ÔN TẬP TỐT VÀ ĐẠT ĐIỂM CAO! 🚀

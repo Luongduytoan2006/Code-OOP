@@ -1,0 +1,817 @@
+================================================================================
+                    TÀI LIỆU ÔN TẬP OOP - TEST 2
+         OPERATOR OVERLOADING & FUNCTION OVERLOADING
+================================================================================
+
+MỤC LỤC:
+1. OPERATOR OVERLOADING (NẠP CHỒNG TOÁN TỬ)
+2. FUNCTION OVERLOADING
+3. FRIEND FUNCTION
+4. SPECIAL MEMBER FUNCTIONS
+5. STATIC MEMBERS
+6. CONST-CORRECTNESS
+7. CÁC LỖI THƯỜNG GẶP
+8. TIPS & TRICKS
+
+================================================================================
+1. OPERATOR OVERLOADING (NẠP CHỒNG TOÁN TỬ)
+================================================================================
+
+1.1. KHÁI NIỆM CƠ BẢN
+----------------------
+Operator Overloading cho phép định nghĩa lại cách hoạt động của toán tử 
+với các kiểu dữ liệu người dùng tự định nghĩa (class).
+
+VÍ DỤ:
+    Complex c1(1, 2), c2(3, 4);
+    Complex c3 = c1 + c2;  // Dùng operator+ đã overload
+
+MỤC ĐÍCH:
+- Làm code dễ đọc, tự nhiên hơn
+- Tận dụng cú pháp có sẵn của C++
+- Tạo sự nhất quán với built-in types
+
+1.2. MEMBER FUNCTION vs FRIEND FUNCTION
+----------------------------------------
+
+a) MEMBER FUNCTION (Hàm thành viên):
+    class Complex {
+    public:
+        Complex operator+(const Complex& other) const {
+            return Complex(R + other.R, I + other.I);
+        }
+    };
+    
+    // Sử dụng: c3 = c1 + c2;
+    // Tương đương: c3 = c1.operator+(c2);
+
+b) FRIEND FUNCTION (Hàm bạn):
+    class Complex {
+        friend Complex operator+(const Complex& a, const Complex& b) {
+            return Complex(a.R + b.R, a.I + b.I);
+        }
+    };
+    
+    // Sử dụng: c3 = c1 + c2;
+    // Tương đương: c3 = operator+(c1, c2);
+
+PHÂN BIỆT:
+┌─────────────────┬──────────────────┬──────────────────┐
+│                 │ Member Function  │ Friend Function  │
+├─────────────────┼──────────────────┼──────────────────┤
+│ Số tham số      │ 1 (bên phải)     │ 2 (cả 2 toán hạng)│
+│ Truy cập this   │ Có               │ Không            │
+│ Cú pháp gọi     │ obj.operator+()  │ operator+()      │
+│ Dùng khi        │ a op b           │ Linh hoạt hơn    │
+└─────────────────┴──────────────────┴──────────────────┘
+
+1.3. CÁC TOÁN TỬ THƯỜNG GẶP
+----------------------------
+
+A) TOÁN TỬ SỐ HỌC (+, -, *, /)
+-------------------------------
+VÍ DỤ TỪ TEST (on_15.cpp):
+
+    class Exam {
+        int x, y, z;
+    public:
+        Exam(int a, int b, int c) : x(a), y(b), z(c) {}
+        
+        // Overload operator+
+        Exam operator+(const Exam& obj) const {
+            return Exam(x + obj.x, y + obj.y, z + obj.z);
+        }
+    };
+    
+    int main() {
+        Exam e1(1, 2, 3), e2(10, 20, 30);
+        Exam e3 = e1 + e2;  // (11, 22, 33)
+    }
+
+ĐẶC ĐIỂM:
+✓ TRẢ VỀ BY VALUE (tạo object mới)
+✓ CONST MEMBER FUNCTION (không thay đổi object)
+✓ Tham số const reference
+
+B) TOÁN TỬ PHỨC HỢP (+=, -=, *=, /=)
+-------------------------------------
+VÍ DỤ TỪ TEST (on_20.cpp):
+
+    class Exam {
+        int val;
+    public:
+        // operator+= TRẢ VỀ REFERENCE
+        Exam& operator+=(const Exam& obj) {
+            val += obj.val;
+            return *this;  // Trả về chính object này
+        }
+        
+        // operator+ dùng +=
+        Exam operator+(const Exam& obj) const {
+            Exam temp = *this;
+            temp += obj;
+            return temp;
+        }
+    };
+
+QUAN TRỌNG:
+✓ TRẢ VỀ REFERENCE (*this) để cho phép chain: a += b += c;
+✓ KHÔNG CONST (vì thay đổi object)
+✓ Có thể dùng += để implement +
+
+C) TOÁN TỬ XUẤT NHẬP (<<, >>)
+-------------------------------
+VÍ DỤ TỪ TEST (on_18.cpp):
+
+    class Exam {
+        int val;
+    public:
+        // PHẢI LÀ FRIEND FUNCTION
+        friend ostream& operator<<(ostream& os, const Exam& obj) {
+            os << obj.val;
+            return os;  // Trả về stream để chain
+        }
+        
+        friend istream& operator>>(istream& is, Exam& obj) {
+            is >> obj.val;
+            return is;
+        }
+    };
+    
+    int main() {
+        Exam e;
+        cin >> e;
+        cout << e << endl;  // Chain được
+    }
+
+TẠI SAO PHẢI LÀ FRIEND?
+- Toán hạng bên trái là stream (ostream, istream)
+- Không thể làm member function của class riêng
+- Cần truy cập private members
+
+D) TOÁN TỬ SUBSCRIPT ([])
+--------------------------
+VÍ DỤ TỪ TEST (on_24.cpp):
+
+    class Array {
+        int data[10];
+        static int temp;  // Dùng khi out-of-bounds
+    public:
+        // Trả về REFERENCE để có thể gán
+        int& operator[](int index) {
+            if (index >= 0 && index < 10)
+                return data[index];
+            return temp;  // Out of bounds
+        }
+    };
+    
+    int main() {
+        Array arr;
+        arr[0] = 5;  // Gán được vì trả về reference
+        cout << arr[0];  // 5
+        arr[100] = 10;   // Out-of-bounds → gán vào temp
+    }
+
+QUAN TRỌNG:
+✓ TRẢ VỀ REFERENCE để có thể gán giá trị
+✓ PHẢI LÀ MEMBER FUNCTION (không thể friend)
+✓ Xử lý out-of-bounds
+
+E) TOÁN TỬ GỌI HÀM (())
+------------------------
+VÍ DỤ TỪ TEST (on_3.cpp):
+
+    class Functor {
+        int base;
+    public:
+        Functor(int b) : base(b) {}
+        
+        // Overload operator() - Function call
+        int operator()(int x) const {
+            return base + x;
+        }
+    };
+    
+    int main() {
+        Functor add5(5);
+        cout << add5(10);  // 15 (5 + 10)
+    }
+
+ỨNG DỤNG:
+- Tạo function objects (functors)
+- Dùng trong STL algorithms
+- Callback functions
+
+F) TOÁN TỬ DẤU PHẨY (,)
+------------------------
+VÍ DỤ TỪ TEST (on_5.cpp):
+
+    class Base {
+    public:
+        friend int operator,(Base& obj, int x) {
+            return x;  // Trả về toán hạng phải
+        }
+    };
+    
+    int main() {
+        Base obj;
+        cout << (obj, 5);  // 5
+    }
+
+LƯU Ý:
+- Ít dùng trong thực tế
+- Có thể gây confuse
+- Thường dùng cho mục đích đặc biệt
+
+G) TOÁN TỬ CHUYỂN ĐỔI KIỂU
+---------------------------
+VÍ DỤ TỪ TEST (on_26.cpp):
+
+    class Exam {
+        int val;
+    public:
+        Exam(int v) : val(v) {}
+        
+        // Chuyển đổi sang double
+        operator double() const {
+            return static_cast<double>(val);
+        }
+        
+        // Chuyển đổi sang int
+        operator int() const {
+            return val;
+        }
+    };
+    
+    int main() {
+        Exam e(10);
+        double d = e;  // Gọi operator double()
+        int i = e;     // Gọi operator int()
+    }
+
+1.4. CÁC TOÁN TỬ ĐẶC BIỆT
+--------------------------
+
+A) TOÁN TỬ NEW VÀ DELETE
+-------------------------
+VÍ DỤ TỪ TEST (on_13.cpp):
+
+    class Base {
+    public:
+        // Overload operator new
+        void* operator new(size_t size) {
+            cout << "New.";
+            void* storage = malloc(size);
+            if (!storage) throw bad_alloc();
+            return storage;
+        }
+        
+        // Overload operator delete
+        void operator delete(void* ptr) {
+            cout << "Delete.";
+            free(ptr);
+        }
+    };
+    
+    int main() {
+        Base* ptr = new Base;  // New.Constructor.
+        delete ptr;            // Destructor.Delete.
+    }
+
+ỨNG DỤNG:
+- Memory pool
+- Debugging memory leaks
+- Custom memory management
+
+B) ASSIGNMENT OPERATOR (=)
+---------------------------
+VÍ DỤ TỪ TEST (on_8.cpp):
+
+    class Exam {
+        int val;
+    public:
+        // Copy constructor
+        Exam(const Exam& other) : val(other.val) {
+            cout << "Copy";
+        }
+        
+        // Assignment operator
+        Exam& operator=(const Exam& other) {
+            if (this != &other) {  // Kiểm tra self-assignment
+                val = other.val;
+            }
+            return *this;
+        }
+    };
+
+QUAN TRỌNG:
+✓ Kiểm tra self-assignment: if (this != &other)
+✓ Trả về *this by reference
+✓ PHẢI LÀ MEMBER FUNCTION
+
+1.5. QUY TẮC OVERLOADING
+-------------------------
+
+CÁC TOÁN TỬ PHẢI LÀ MEMBER FUNCTION:
+- = (assignment)
+- [] (subscript)
+- () (function call)
+- -> (member access)
+
+CÁC TOÁN TỬ NÊN LÀ FRIEND FUNCTION:
+- << và >> (stream operators)
+- Binary operators khi cần symmetry: a + b và b + a
+
+KHÔNG THỂ OVERLOAD:
+- . (member access)
+- .* (pointer to member)
+- :: (scope resolution)
+- ?: (ternary conditional)
+- sizeof
+- typeid
+
+================================================================================
+2. FUNCTION OVERLOADING
+================================================================================
+
+2.1. KHÁI NIỆM
+--------------
+Function Overloading cho phép nhiều hàm cùng tên nhưng khác tham số.
+
+CÚ PHÁP:
+    int add(int a, int b);
+    double add(double a, double b);
+    int add(int a, int b, int c);
+
+2.2. OVERLOAD RESOLUTION
+------------------------
+Compiler chọn hàm dựa vào:
+1. Khớp chính xác (exact match)
+2. Type promotion (int → long)
+3. Type conversion (int → double)
+
+VÍ DỤ TỪ TEST (on_16.cpp):
+
+    int Func(int x, int y) {
+        return x * y;
+    }
+    
+    int Func(int x, int y, int z) {
+        return x * y * z;
+    }
+    
+    int Func(double x) {
+        return x * 2;
+    }
+    
+    int main() {
+        Func(6, 10);      // Gọi Func(int, int) → 60
+        Func(6, 10, 3);   // Gọi Func(int, int, int) → 180
+        Func(6.0);        // Gọi Func(double) → 12
+    }
+
+2.3. AMBIGUITY (NHẬP NHẰNG)
+----------------------------
+VÍ DỤ TỪ TEST (on_1.cpp):
+
+    int Func(int a, int b);
+    int Func(int a, int b, int c = 6);  // Default parameter
+    
+    int main() {
+        Func(2, 4);  // COMPILE ERROR! Ambiguous
+        // Cả 2 hàm đều khớp
+    }
+
+QUY TẮC:
+❌ Tránh overload khi có default parameters trùng lặp
+❌ Tránh implicit conversion gây nhập nhằng
+
+2.4. DEFAULT PARAMETERS
+-----------------------
+    void Func(int x, int y = 10, int z = 5);
+    
+    Func(1);        // x=1, y=10, z=5
+    Func(1, 2);     // x=1, y=2, z=5
+    Func(1, 2, 3);  // x=1, y=2, z=3
+
+QUY TẮC:
+✓ Default parameters phải ở cuối
+✓ Không thể bỏ qua tham số ở giữa
+
+================================================================================
+3. FRIEND FUNCTION
+================================================================================
+
+3.1. KHÁI NIỆM
+--------------
+Friend function có quyền truy cập private/protected members của class.
+
+CÚ PHÁP:
+    class MyClass {
+        int secret;
+        friend void showSecret(const MyClass& obj);
+    };
+    
+    void showSecret(const MyClass& obj) {
+        cout << obj.secret;  // OK: friend có quyền truy cập
+    }
+
+3.2. OPERATOR<< VỚI FRIEND
+---------------------------
+VÍ DỤ:
+    class Complex {
+        double R, I;
+    public:
+        friend ostream& operator<<(ostream& os, const Complex& c) {
+            return os << c.R << " + " << c.I << "i";
+        }
+    };
+
+TẠI SAO CẦN FRIEND?
+- Toán hạng trái là ostream (không phải Complex)
+- Không thể làm member của Complex
+- Cần truy cập private members (R, I)
+
+3.3. QUY TẮC FRIEND
+-------------------
+✓ Khai báo friend TRONG class definition
+✓ Định nghĩa có thể trong hoặc ngoài class
+✓ Friend không phải member → Không có this
+✓ Friend phá vỡ encapsulation → Dùng cẩn thận
+
+================================================================================
+4. SPECIAL MEMBER FUNCTIONS
+================================================================================
+
+4.1. CONSTRUCTOR
+----------------
+    class Exam {
+    public:
+        Exam();                    // Default constructor
+        Exam(int x);               // Parameterized constructor
+        Exam(const Exam& other);   // Copy constructor
+    };
+
+4.2. COPY CONSTRUCTOR
+---------------------
+VÍ DỤ TỪ TEST (on_8.cpp):
+
+    class Exam {
+        int val;
+    public:
+        Exam(int v) : val(v) {
+            cout << v;
+        }
+        
+        Exam(const Exam& other) : val(other.val) {
+            cout << val;
+        }
+    };
+    
+    Exam Func(Exam obj) {  // Copy khi truyền vào
+        Exam temp(3);
+        return temp;       // Copy khi return (có thể RVO)
+    }
+    
+    int main() {
+        Exam obj(1);       // 1
+        obj = Func(obj);   // Copy obj → 1, tạo temp → 3
+        // Kết quả: 113
+    }
+
+KHI NÀO GỌI COPY CONSTRUCTOR?
+- Truyền tham số by value
+- Return by value (nếu không RVO)
+- Khởi tạo: Exam e2 = e1;
+
+4.3. ASSIGNMENT OPERATOR
+------------------------
+    Exam& operator=(const Exam& other) {
+        if (this != &other) {  // Tránh self-assignment
+            val = other.val;
+        }
+        return *this;
+    }
+
+PHÂN BIỆT COPY VS ASSIGNMENT:
+    Exam e2 = e1;    // Copy constructor
+    Exam e3;
+    e3 = e1;         // Assignment operator
+
+4.4. DESTRUCTOR
+---------------
+    ~Exam() {
+        // Giải phóng tài nguyên
+    }
+
+VÍ DỤ TỪ TEST (on_2.cpp):
+
+    class ExamA {
+    public:
+        virtual ~ExamA() {
+            cout << "~ExamA";
+        }
+    };
+    
+    class Derived : public ExamA {
+    public:
+        ~Derived() {
+            cout << "~Derived";
+        }
+    };
+    
+    int main() {
+        ExamA* ptr = new Derived;
+        delete ptr;  // ~Derived~ExamA (vì virtual)
+    }
+
+================================================================================
+5. STATIC MEMBERS
+================================================================================
+
+5.1. STATIC DATA MEMBER
+-----------------------
+VÍ DỤ TỪ TEST (on_21.cpp):
+
+    class Exam {
+        static int count;  // Khai báo
+    public:
+        Exam() { ++count; }
+        ~Exam() { --count; }
+        static int getCount() { return count; }
+    };
+    
+    // Định nghĩa ngoài class
+    int Exam::count = 0;
+    
+    int main() {
+        Exam e1, e2;
+        cout << Exam::count;  // 2
+    }
+
+ĐẶC ĐIỂM:
+- Shared giữa tất cả objects
+- Phải định nghĩa ngoài class
+- Truy cập qua ClassName::member
+
+5.2. STATIC MEMBER FUNCTION
+----------------------------
+    class Exam {
+        static int val;
+    public:
+        static int getVal() {
+            return val;  // Chỉ truy cập static members
+        }
+    };
+    
+    // Gọi không cần object
+    cout << Exam::getVal();
+
+================================================================================
+6. CONST-CORRECTNESS
+================================================================================
+
+6.1. CONST MEMBER FUNCTION
+--------------------------
+    class Exam {
+        int val;
+    public:
+        int getVal() const {  // Không thay đổi object
+            return val;
+        }
+        
+        void setVal(int v) {  // Thay đổi object → không const
+            val = v;
+        }
+    };
+
+6.2. CONST PARAMETERS
+---------------------
+    // Tham số không đổi
+    int add(const int& a, const int& b) {
+        return a + b;
+    }
+
+6.3. CONST RETURN TYPE
+----------------------
+    const Exam& getMax(const Exam& a, const Exam& b) const {
+        return (a > b) ? a : b;
+    }
+
+QUY TẮC:
+✓ Hàm không thay đổi object → const member function
+✓ Tham số không thay đổi → const reference
+✓ Return reference không muốn thay đổi → const reference
+
+================================================================================
+7. CÁC LỖI THƯỜNG GẶP
+================================================================================
+
+7.1. RETURN TYPE SAI
+--------------------
+❌ SAI:
+    void operator+=(const Exam& obj) {
+        val += obj.val;
+    }
+
+✓ ĐÚNG:
+    Exam& operator+=(const Exam& obj) {
+        val += obj.val;
+        return *this;  // Cho phép chain: a += b += c
+    }
+
+7.2. QUÊN CONST-CORRECTNESS
+---------------------------
+❌ SAI:
+    bool operator==(const Exam& other) {
+        return val == other.val;
+    }
+
+✓ ĐÚNG:
+    bool operator==(const Exam& other) const {
+        return val == other.val;
+    }
+
+7.3. FRIEND VS MEMBER CONFUSION
+-------------------------------
+❌ SAI:
+    class Exam {
+        // operator<< phải là friend
+        ostream& operator<<(ostream& os) {
+            return os << val;
+        }
+    };
+
+✓ ĐÚNG:
+    class Exam {
+        friend ostream& operator<<(ostream& os, const Exam& obj) {
+            return os << obj.val;
+        }
+    };
+
+7.4. SELF-ASSIGNMENT
+--------------------
+❌ SAI:
+    Exam& operator=(const Exam& other) {
+        delete[] data;
+        data = new int[other.size];
+        // Nếu this == &other → data đã bị delete
+    }
+
+✓ ĐÚNG:
+    Exam& operator=(const Exam& other) {
+        if (this != &other) {  // Kiểm tra trước
+            delete[] data;
+            data = new int[other.size];
+        }
+        return *this;
+    }
+
+7.5. OPERATOR[] RETURN TYPE
+---------------------------
+❌ SAI:
+    int operator[](int index) {
+        return data[index];  // Return by value → không gán được
+    }
+
+✓ ĐÚNG:
+    int& operator[](int index) {
+        return data[index];  // Return reference → gán được
+    }
+
+7.6. AMBIGUITY VỚI DEFAULT PARAMETERS
+--------------------------------------
+❌ SAI:
+    int Func(int x, int y);
+    int Func(int x, int y, int z = 5);
+    Func(1, 2);  // COMPILE ERROR! Ambiguous
+
+✓ SỬA:
+    int Func(int x, int y);
+    int Func(int x, int y, int z);  // Không dùng default
+
+7.7. MEMORY MANAGEMENT
+----------------------
+❌ SAI:
+    void* operator new(size_t size) {
+        return malloc(size);  // Không check null
+    }
+
+✓ ĐÚNG:
+    void* operator new(size_t size) {
+        void* ptr = malloc(size);
+        if (!ptr) throw bad_alloc();
+        return ptr;
+    }
+
+================================================================================
+8. TIPS & TRICKS
+================================================================================
+
+8.1. BẢNG TỔNG HỢP OPERATORS
+-----------------------------
+┌────────────────┬──────────┬────────────┬─────────────┐
+│ Toán tử        │ Member?  │ Return     │ Const?      │
+├────────────────┼──────────┼────────────┼─────────────┤
+│ +, -, *, /     │ M hoặc F │ By value   │ const       │
+│ +=, -=, *=, /= │ M        │ Reference  │ non-const   │
+│ ==, !=, <, >   │ M hoặc F │ bool       │ const       │
+│ <<, >>         │ Friend   │ stream&    │ const param │
+│ []             │ Member   │ Reference  │ 2 versions  │
+│ ()             │ Member   │ Tùy ý      │ Tùy ý       │
+│ =              │ Member   │ Reference  │ non-const   │
+│ new, delete    │ Static M │ void*      │ N/A         │
+└────────────────┴──────────┴────────────┴─────────────┘
+
+8.2. CHECKLIST KHI OVERLOAD
+----------------------------
+□ Member hay Friend function?
+□ Return type đúng chưa? (value, reference, stream&)
+□ Const correctness? (tham số và hàm)
+□ Self-assignment check? (với operator=)
+□ Bounds checking? (với operator[])
+□ Exception handling? (với new)
+□ Symmetry? (a+b và b+a đều hoạt động)
+
+8.3. PATTERN THƯỜNG DÙNG
+-------------------------
+
+PATTERN 1: Arithmetic Operators
+    Exam operator+(const Exam& obj) const {
+        return Exam(val + obj.val);
+    }
+
+PATTERN 2: Compound Assignment
+    Exam& operator+=(const Exam& obj) {
+        val += obj.val;
+        return *this;
+    }
+
+PATTERN 3: Stream Operators
+    friend ostream& operator<<(ostream& os, const Exam& obj) {
+        return os << obj.val;
+    }
+
+PATTERN 4: Comparison
+    bool operator<(const Exam& obj) const {
+        return val < obj.val;
+    }
+
+PATTERN 5: Subscript
+    T& operator[](size_t index) {
+        return data[index];
+    }
+    const T& operator[](size_t index) const {
+        return data[index];
+    }
+
+8.4. BEST PRACTICES
+-------------------
+✓ Dùng const reference cho parameters lớn
+✓ Return reference từ +=, -=, *= để chain
+✓ Return by value từ +, -, * (tạo object mới)
+✓ Kiểm tra self-assignment trong operator=
+✓ Virtual destructor khi có polymorphism
+✓ Implement operator+ bằng operator+=
+✓ Implement comparison operators (<, ==) rồi dùng cho các toán tử khác
+
+8.5. CÔNG THỨC NHANH
+--------------------
+• operator+ → return by value, const function
+• operator+= → return *this by reference, non-const
+• operator<< → friend function, return ostream&
+• operator[] → return reference, 2 versions (const/non-const)
+• operator= → member only, check self-assignment, return *this
+• operator() → member only, functor pattern
+
+================================================================================
+KẾT LUẬN
+================================================================================
+
+TEST 2 TẬP TRUNG VÀO:
+✅ Operator Overloading (90%)
+✅ Function Overloading (5%)
+✅ Friend Function (5%)
+
+ĐIỂM THEN CHỐT CẦN NHỚ:
+1. Phân biệt Member vs Friend function
+2. Return type đúng (value, reference, stream)
+3. Const-correctness (tham số và hàm)
+4. Self-assignment check
+5. Virtual destructor với polymorphism
+
+CÁC TOÁN TỬ QUAN TRỌNG:
+- Arithmetic: +, +=
+- Stream: <<, >>
+- Subscript: []
+- Function call: ()
+- Assignment: =
+- Memory: new, delete
+
+LUYỆN TẬP:
+- Viết class với đầy đủ operators
+- Phân biệt khi nào dùng member/friend
+- Thực hành const-correctness
+- Debug ambiguity errors
+
+CHÚC BẠN ÔN TẬP TỐT VÀ ĐẠT ĐIỂM CAO! 🚀

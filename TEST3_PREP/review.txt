@@ -1,0 +1,1486 @@
+================================================================================
+                    TÀI LIỆU ÔN TẬP OOP - TEST 3
+                    TỔNG HỢP LÝ THUYẾT VÀ VÍ DỤ
+================================================================================
+
+MỤC LỤC:
+1. KẾ THỪA (INHERITANCE)
+2. ĐA HÌNH (POLYMORPHISM) 
+3. HÀM ẢO (VIRTUAL FUNCTIONS)
+4. ĐA KẾ THỪA (MULTIPLE INHERITANCE)
+5. TEMPLATE
+6. EXCEPTION HANDLING
+7. CÁC LỖI THƯỜNG GẶP
+8. TIPS & TRICKS
+
+================================================================================
+1. KẾ THỪA (INHERITANCE)
+================================================================================
+
+1.1. KHÁI NIỆM CƠ BẢN
+----------------------
+Kế thừa cho phép một lớp (class con/Derived) thừa hưởng các thuộc tính và 
+phương thức từ lớp khác (class cha/Base).
+
+CÚ PHÁP:
+    class Base {
+        // Thành viên của lớp cha
+    };
+    
+    class Derived : public Base {  // Kế thừa public
+        // Thành viên của lớp con
+    };
+
+1.2. CÁC LOẠI KẾ THỪA
+----------------------
+a) PUBLIC INHERITANCE (phổ biến nhất):
+   - public của Base → public của Derived
+   - protected của Base → protected của Derived
+   - private của Base → KHÔNG truy cập được
+
+b) PROTECTED INHERITANCE:
+   - public của Base → protected của Derived
+   - protected của Base → protected của Derived
+
+c) PRIVATE INHERITANCE:
+   - public của Base → private của Derived
+   - protected của Base → private của Derived
+
+VÍ DỤ TỪ CÂU 13:
+    class Base {
+        int prop_b;
+    public:
+        void setPropB(int);
+        void printPropB();
+    };
+    
+    class Derived : private Base {  // Kế thừa PRIVATE
+    public:
+        void setPropD(int, int);
+        // Bên trong Derived VẪN GỌI ĐƯỢC hàm của Base
+        // Nhưng từ main() KHÔNG GỌI ĐƯỢC trực tiếp
+    };
+
+QUAN TRỌNG:
+- Kế thừa private: Các hàm public của Base trở thành private trong Derived
+- Bên trong class Derived vẫn dùng được, nhưng main() không gọi trực tiếp được
+
+1.3. THỨ TỰ KHỞI TẠO VÀ HỦY
+----------------------------
+QUY TẮC VÀNG:
+✓ Constructor: CHA → CON
+✓ Destructor: CON → CHA (ngược lại)
+
+VÍ DỤ TỪ CÂU 2:
+    class X {
+    public:
+        X() { cout << "X"; }      // 1. Chạy trước
+        ~X() { cout << "~X"; }    // 4. Chạy sau cùng
+    };
+    
+    class Y : public X {
+    public:
+        Y() { cout << "Y"; }      // 2. Chạy sau cha
+        ~Y() { cout << "~Y"; }    // 3. Chạy trước cha
+    };
+    
+    int main() {
+        Y obj;  // Output: XY
+        return 0;  // Output tiếp: ~Y~X
+    }
+    // KẾT QUẢ CUỐI CÙNG: XY~Y~X
+
+VÍ DỤ TỪ CÂU 23:
+    class ExamA {
+    public:
+        ExamA() { cout << "IT"; }      // 1
+        ~ExamA() { cout << "ITF"; }    // 4
+    };
+    
+    class ExamB : public ExamA {
+    public:
+        ExamB() { cout << "DUT"; }     // 2
+        ~ExamB() { cout << "DHBK"; }   // 3
+    };
+    
+    int main() {
+        ExamB obj;
+        return 0;
+    }
+    // Output: ITDUTDHBKITF
+
+LÝ DO: 
+- Khi tạo object con, phải tạo phần cha trước (nền móng)
+- Khi hủy, phải phá phần con trước mới phá phần cha (như phá nhà)
+
+1.4. INITIALIZER LIST (DANH SÁCH KHỞI TẠO)
+-------------------------------------------
+LỖI THƯỜNG GẶP - VÍ DỤ TỪ CÂU 5:
+
+❌ SAI:
+    class Base {
+        int x, y;
+    public:
+        Base(int, int);  // Không có constructor mặc định
+    };
+    
+    class Derived : public Base {
+    public:
+        Derived(int i, int j) : x(i), y(j) { }  // LỖI!
+        // x, y là của Base, không thể khởi tạo trực tiếp
+    };
+
+✓ ĐÚNG:
+    class Derived : public Base {
+    public:
+        Derived(int i, int j) : Base(i, j) { }  // Gọi constructor cha
+    };
+
+QUY TẮC:
+- Nếu lớp cha KHÔNG có constructor mặc định
+- Lớp con BẮT BUỘC phải gọi constructor cha trong initializer list
+- Cú pháp: Derived(...) : Base(...) { }
+
+VÍ DỤ TỪ CÂU 32:
+    class Base {
+        int prop;
+    public:
+        Base() : prop(10) { }           // Constructor mặc định
+        Base(int p) : prop(p) { }
+    };
+    
+    class Derived : public Base {
+        int prop;  // Biến KHÁC với prop của Base
+    public:
+        Derived(int p) : prop(p) { }
+        // Không gọi Base() tường minh → Tự động gọi Base() mặc định
+        // → Base::prop = 10
+        // → Derived::prop = p
+    };
+
+1.5. NAME HIDING (CHE KHUẤT TÊN)
+--------------------------------
+VÍ DỤ TỪ CÂU 9:
+    class Base {
+        int x, y, z;
+    public:
+        Base(int xx, int yy = 'A', int zz = 'B') {
+            x = xx; y = x + yy; z = x + y;
+        }
+    };
+    
+    class Derived : public Base {
+        int x, y;  // CHE KHUẤT x, y của Base
+    public:
+        Derived(int xx = 65, int yy = 66) : Base(xx, yy) {
+            y = xx;  // Gán cho Derived::y
+            x = yy;  // Gán cho Derived::x
+        }
+    };
+
+QUAN TRỌNG:
+- Biến cùng tên ở lớp con sẽ che khuất biến ở lớp cha
+- Base vẫn có x, y, z riêng của nó
+- Derived có x, y riêng khác hoàn toàn
+
+1.6. FUNCTION HIDING (CHE KHUẤT HÀM)
+------------------------------------
+VÍ DỤ TỪ CÂU 41:
+
+❌ KHÔNG CÓ "using":
+    class One {
+    public:
+        double add(double x) { return x + 0.1; }
+    };
+    
+    class Two : public One {
+    public:
+        int add(int x) { return x + 1; }
+    };
+    
+    int main() {
+        Two obj;
+        cout << obj.add(10);     // Gọi add(int) → 11
+        cout << obj.add(10.5);   // Vẫn gọi add(int), 10.5→10 → 11
+        // KẾT QUẢ: 1111
+    }
+
+✓ CÓ "using" - VÍ DỤ TỪ CÂU 29:
+    class Two : public One {
+    public:
+        using One::add;  // Đưa add(double) vào scope
+        int add(int x) { return x + 1; }
+    };
+    
+    int main() {
+        Two obj;
+        cout << obj.add(10);     // Gọi add(int) → 11
+        cout << obj.add(10.5);   // Gọi add(double) → 10.6
+        // KẾT QUẢ: 1110.6
+    }
+
+QUY TẮC:
+- Hàm con cùng tên sẽ CHE KHUẤT hoàn toàn hàm cha (kể cả khác tham số)
+- Dùng "using Base::func;" để lấy lại hàm cha
+
+================================================================================
+2. ĐA HÌNH (POLYMORPHISM)
+================================================================================
+
+2.1. KHÁI NIỆM
+--------------
+Đa hình = Một giao diện, nhiều hình thức khác nhau
+
+HAI LOẠI ĐA HÌNH:
+a) Compile-time Polymorphism (Static/Early Binding):
+   - Function Overloading
+   - Operator Overloading
+   - Template
+
+b) Runtime Polymorphism (Dynamic/Late Binding):
+   - Virtual Functions
+   - Con trỏ/tham chiếu lớp cha trỏ tới object con
+
+2.2. STATIC BINDING (LIÊN KẾT TĨNH)
+------------------------------------
+VÍ DỤ TỪ CÂU 44:
+
+    class Base {
+    public:
+        void show() { cout << "B"; }  // KHÔNG có virtual
+    };
+    
+    class Derived : public Base {
+    public:
+        void show() { cout << "D"; }
+    };
+    
+    int main() {
+        Base *bp;
+        Derived d;
+        bp = &d;  // Con trỏ cha trỏ tới object con
+        
+        bp->show();  // Gọi Base::show() → In "B"
+        // Vì show() KHÔNG phải virtual
+        // → Nhìn vào KIỂU con trỏ (Base*) → Gọi hàm Base
+    }
+
+ĐẶC ĐIỂM:
+- Quyết định hàm nào gọi DỰA VÀO KIỂU CON TRỎ
+- Quyết định tại thời điểm BIÊN DỊCH
+- KHÔNG linh hoạt
+
+2.3. DYNAMIC BINDING (LIÊN KẾT ĐỘNG)
+-------------------------------------
+VÍ DỤ TỪ CÂU 45:
+
+    class Base {
+    public:
+        virtual void show() { cout << "B"; }  // CÓ virtual
+    };
+    
+    class Derived : public Base {
+    public:
+        void show() { cout << "D"; }  // Override
+    };
+    
+    int main() {
+        Base *bp, b;
+        Derived d;
+        
+        bp = &d;
+        bp->show();  // In "D" (vì bp trỏ tới Derived)
+        
+        bp = &b;
+        bp->show();  // In "B" (vì bp trỏ tới Base)
+        
+        // Output: DB
+    }
+
+ĐẶC ĐIỂM:
+- Quyết định hàm nào gọi DỰA VÀO OBJECT THỰC TẾ
+- Quyết định tại thời điểm CHẠY CHƯƠNG TRÌNH
+- Linh hoạt, hỗ trợ đa hình
+
+2.4. VÔ HIỆU HÓA DYNAMIC BINDING
+--------------------------------
+VÍ DỤ TỪ CÂU 35:
+
+    Base *bp = new Derived;
+    bp->Base::show();  // GỌI TƯỜNG MINH Base::show()
+    // → In "B" dù bp trỏ tới Derived
+
+KỸ THUẬT:
+- Dùng toán tử phạm vi (::) để chỉ định lớp cụ thể
+- Vô hiệu hóa cơ chế virtual
+
+2.5. OBJECT SLICING (CẮT ĐỐI TƯỢNG)
+------------------------------------
+VÍ DỤ TỪ CÂU 27:
+
+    void describe(Base p) {  // PASS BY VALUE!
+        cout << p.print();
+    }
+    
+    int main() {
+        Base b;
+        Derived d;
+        
+        describe(b);  // In "B"
+        describe(d);  // Vẫn in "B" (BỊ CẮT!)
+        // Output: BB
+    }
+
+TẠI SAO?
+- Tham số là Base p (không phải Base* hay Base&)
+- Khi truyền Derived vào → Chỉ copy phần Base
+- Phần mở rộng của Derived bị "cắt bỏ"
+- Mất tính đa hình
+
+✓ CÁCH ĐÚNG:
+    void describe(Base& p) {  // THAM CHIẾU
+        cout << p.print();
+    }
+    // hoặc
+    void describe(Base* p) {  // CON TRỎ
+        cout << p->print();
+    }
+
+VÍ DỤ TỪ CÂU 8:
+    Base obj_b(10);
+    Base& obj_r = obj_b;  // Tham chiếu
+    Derived obj_d(20);
+    
+    obj_r = obj_d;  // Object Slicing!
+    // Chỉ phần Base của obj_d được copy sang obj_b
+    
+    obj_d.Func();  // Vẫn dùng dữ liệu riêng của obj_d
+
+VÍ DỤ TỪ CÂU 34:
+    void Func() {
+        Derived obj;
+        throw obj;  // Ném OBJECT (value)
+    }
+    
+    try {
+        Func();
+    }
+    catch (Derived* e) { }  // Bắt CON TRỎ → KHÔNG BẮT ĐƯỢC
+    catch (Base e) { }      // Bắt VALUE → BẮT ĐƯỢC (bị slicing)
+
+QUY TẮC VÀNG:
+➤ LUÔN dùng CON TRỎ hoặc THAM CHIẾU để tránh Object Slicing
+➤ Chỉ dùng pass-by-value khi muốn copy thuần túy
+
+================================================================================
+3. HÀM ẢO (VIRTUAL FUNCTIONS)
+================================================================================
+
+3.1. KHÁI NIỆM VÀ CÚ PHÁP
+-------------------------
+Hàm ảo cho phép lớp con ghi đè (override) hàm của lớp cha, 
+và hỗ trợ đa hình runtime.
+
+CÚ PHÁP:
+    class Base {
+    public:
+        virtual void func() { }  // Hàm ảo
+        virtual ~Base() { }      // Destructor ảo
+    };
+    
+    class Derived : public Base {
+    public:
+        void func() override { }  // Override (C++11)
+    };
+
+3.2. CƠ CHẾ HOẠT ĐỘNG (VTABLE & VPTR)
+--------------------------------------
+VÍ DỤ TỪ CÂU 36:
+
+    class Test1 {
+        int x;  // 4 bytes
+    public:
+        void show() { }  // Hàm thường
+    };
+    // sizeof(Test1) = 4
+    
+    class Test2 {
+        int x;  // 4 bytes
+    public:
+        virtual void show() { }  // Hàm ảo
+    };
+    // sizeof(Test2) = 8 (32-bit) hoặc 16 (64-bit)
+
+TẠI SAO Test2 LỚN HƠN?
+- Khi có hàm virtual, compiler thêm con trỏ ẩn (vptr)
+- vptr trỏ tới bảng hàm ảo (vtable)
+- vtable chứa địa chỉ các hàm virtual
+
+CẤU TRÚC BỘ NHỚ:
+    Test2 object:
+    ┌─────────────┐
+    │   vptr      │ → Trỏ tới vtable (4 bytes trên 32-bit)
+    ├─────────────┤
+    │   x (int)   │ → 4 bytes
+    └─────────────┘
+
+VTABLE:
+    vtable của Derived:
+    ┌────────────────────┐
+    │ &Derived::func()   │
+    │ &Derived::func2()  │
+    └────────────────────┘
+
+3.3. QUY TẮC VÀ LỖI THƯỜNG GẶP
+-------------------------------
+
+❌ LỖI 1: VIRTUAL CONSTRUCTOR (CÂU 16, 25)
+    class Base {
+    public:
+        virtual Base();  // COMPILE ERROR!
+    };
+    
+LÝ DO:
+- Constructor tạo ra object
+- vtable cần object đã tồn tại
+- → Mâu thuẫn logic
+
+❌ LỖI 2: VIRTUAL STATIC (CÂU 46)
+    class Base {
+    public:
+        virtual static void Func();  // COMPILE ERROR!
+    };
+    
+LÝ DO:
+- Hàm static thuộc về class, không có 'this'
+- Hàm virtual cần 'this' để tra vtable
+- → Không tương thích
+
+✓ ĐÚNG: VIRTUAL DESTRUCTOR
+    class Base {
+    public:
+        virtual ~Base() { }  // NÊN CÓ!
+    };
+    
+LÝ DO:
+    Base* ptr = new Derived;
+    delete ptr;
+    
+    // Nếu ~Base() không virtual:
+    // → Chỉ gọi ~Base(), không gọi ~Derived()
+    // → Memory leak!
+    
+    // Nếu ~Base() là virtual:
+    // → Gọi ~Derived() trước, sau đó ~Base()
+    // → Đúng!
+
+3.4. PURE VIRTUAL FUNCTION (HÀM ẢO THUẦN TÚY)
+----------------------------------------------
+VÍ DỤ TỪ CÂU 4:
+
+    class Base {
+    public:
+        virtual void Func() = 0;  // Pure virtual
+    };
+    // Base là ABSTRACT CLASS (lớp trừu tượng)
+    
+    class Derived : public Base {
+    public:
+        void Func() { }  // Phải implement
+    };
+    
+    int main() {
+        Base obj;  // COMPILE ERROR!
+        // Không thể tạo object từ abstract class
+        
+        Base* ptr = new Derived();  // OK!
+        ptr->Func();
+    }
+
+ĐẶC ĐIỂM:
+- Abstract class = có ít nhất 1 pure virtual function
+- KHÔNG THỂ tạo object trực tiếp
+- Chỉ dùng làm interface/base class
+- Lớp con PHẢI implement tất cả pure virtual functions
+
+3.5. TRUY CẬP QUA CON TRỎ LỚP CHA
+----------------------------------
+VÍ DỤ TỪ CÂU 7:
+
+    class Base {
+    public:
+        virtual void Func() { }
+        // Không có getProp()
+    };
+    
+    class Derived : public Base {
+        int prop;
+    public:
+        void Func() { }
+        int getProp() const { return prop; }
+    };
+    
+    int main() {
+        Derived obj_d;
+        Base* ptr = &obj_d;
+        
+        ptr->Func();      // OK (có trong Base)
+        ptr->getProp();   // COMPILE ERROR!
+        // Base không có getProp()
+    }
+
+QUY TẮC:
+- Con trỏ Base* chỉ "nhìn thấy" các thành viên của Base
+- Muốn gọi hàm của Derived → Phải cast hoặc khai báo trong Base
+
+CÁCH SỬA:
+    // Cách 1: Dynamic cast
+    Derived* d_ptr = dynamic_cast<Derived*>(ptr);
+    d_ptr->getProp();
+    
+    // Cách 2: Khai báo virtual trong Base
+    class Base {
+    public:
+        virtual int getProp() const = 0;
+    };
+
+================================================================================
+4. ĐA KẾ THỪA (MULTIPLE INHERITANCE)
+================================================================================
+
+4.1. KHÁI NIỆM
+--------------
+Một class có thể kế thừa từ NHIỀU class cha.
+
+CÚ PHÁP:
+    class A { };
+    class B { };
+    class C : public A, public B {
+        // Kế thừa từ cả A và B
+    };
+
+4.2. VÍ DỤ ĐƠN GIẢN
+--------------------
+VÍ DỤ TỪ CÂU 37:
+
+    class Base1 {
+    protected:
+        int SampleDataOne;
+    public:
+        Base1() { SampleDataOne = 100; }
+        int SampleFunctOne() { return SampleDataOne; }
+    };
+    
+    class Base2 {
+    protected:
+        int SampleDataTwo;
+    public:
+        Base2() { SampleDataTwo = 200; }
+        int SampleFunctTwo() { return SampleDataTwo; }
+    };
+    
+    class Derived1 : public Base1, public Base2 {
+        int MyData;
+    public:
+        Derived1() { MyData = 300; }
+        int MyFunct() {
+            return MyData + SampleDataOne + SampleDataTwo;
+        }
+    };
+    
+    int main() {
+        Derived1 obj;
+        cout << obj.SampleFunctOne();  // 100
+        cout << obj.SampleFunctTwo();  // 200
+    }
+
+CẤU TRÚC BỘ NHỚ CỦA Derived1:
+    ┌─────────────────────┐
+    │ Base1::SampleDataOne│ = 100
+    ├─────────────────────┤
+    │ Base2::SampleDataTwo│ = 200
+    ├─────────────────────┤
+    │ MyData              │ = 300
+    └─────────────────────┘
+
+4.3. DIAMOND PROBLEM (VẤN ĐỀ HÌM KIM CƯƠNG)
+--------------------------------------------
+VÍ DỤ TỪ CÂU 1:
+
+         base
+        /    \
+       b1    b2
+        \    /
+        derived
+
+CODE:
+    class base {
+        int arr[10];  // 40 bytes
+    };
+    
+    class b1 : public base { };      // Chứa 1 bản sao base
+    class b2 : public base { };      // Chứa 1 bản sao base
+    
+    class derived : public b1, public b2 { };
+    // Chứa CẢ HAI bản sao base → 80 bytes!
+
+VẤN ĐỀ:
+- derived có 2 bản sao base (qua b1 và b2)
+- Lãng phí bộ nhớ
+- Nhập nhằng khi truy cập
+
+GIẢI PHÁP: VIRTUAL INHERITANCE
+    class b1 : virtual public base { };
+    class b2 : virtual public base { };
+    class derived : public b1, public b2 { };
+    // Chỉ còn 1 bản sao base duy nhất
+
+4.4. STRUCT VÀ ĐA KẾ THỪA
+--------------------------
+VÍ DỤ TỪ CÂU 6:
+
+    struct a { int count; };
+    struct b { int* value; };
+    struct c : public a, public b { };
+    
+    int main() {
+        c* p = new c;
+        p->value = 0;  // Gán NULL → OK
+        cout << "DUT";
+    }
+
+VÍ DỤ TỪ CÂU 43:
+    struct BaseA { int prop_a; };
+    struct BaseB { int* prop_b; };
+    struct BaseC : public BaseA, public BaseB { };
+    
+    int main() {
+        BaseC* ptr = new BaseC;
+        ptr->prop_b = 0;  // Hợp lệ
+        cout << "Inherited";
+    }
+
+LƯU Ý:
+- struct mặc định kế thừa public
+- Các thành viên mặc định public
+- Gán con trỏ = 0 (NULL) là hợp lệ
+
+4.5. VÍ DỤ THỰC TẾ
+-------------------
+VÍ DỤ TỪ CÂU 14:
+
+    class SV {
+    protected:
+        int MSSV;
+    public:
+        void getMSSV(int m) { MSSV = m; }
+    };
+    
+    class Test : public SV {
+    protected:
+        double mark1, mark2;
+    public:
+        void getMark(double m1, double m2) {
+            mark1 = m1; mark2 = m2;
+        }
+    };
+    
+    class Sports {
+    protected:
+        double score;
+    public:
+        void getScore(double s) { score = s; }
+    };
+    
+    class Result : public Test, public Sports {
+        double total;
+    public:
+        void display() {
+            total = mark1 + mark2 + score;
+            cout << total;
+        }
+    };
+    
+    int main() {
+        Result SV;
+        SV.getMSSV(123);
+        SV.getMark(27.5, 33.0);
+        SV.getScore(6.0);
+        SV.display();  // 66.5
+    }
+
+ĐẶC ĐIỂM:
+- Result kế thừa từ Test (có chứa SV) và Sports
+- Truy cập được mark1, mark2 (từ Test) và score (từ Sports)
+- Tất cả đều protected nên truy cập được trong Result
+
+VÍ DỤ TỪ CÂU 42:
+    class polygon {
+    protected:
+        int width, height;
+    };
+    
+    class output1 {
+    public:
+        void output(int i) { cout << i; }
+    };
+    
+    class rectangle : public polygon, public output1 {
+    public:
+        int area() { return width * height; }
+    };
+    
+    class triangle : public polygon, public output1 {
+    public:
+        int area() { return width * height / 2; }
+    };
+    
+    int main() {
+        rectangle rect;
+        triangle trgl;
+        
+        rect.set_values(4, 5);
+        rect.output(rect.area());  // 20
+        
+        trgl.set_values(4, 5);
+        trgl.output(trgl.area());  // 10
+        
+        // Output: 2010
+    }
+
+================================================================================
+5. TEMPLATE
+================================================================================
+
+5.1. FUNCTION TEMPLATE
+----------------------
+VÍ DỤ TỪ CÂU 3:
+
+    template<typename T>
+    void loopIt(T x) {
+        int count = 3;
+        T val[3];
+        for (int i = 0; i < count; i++) {
+            val[i] = x++;  // Post-increment
+            cout << val[i];
+        }
+    }
+    
+    int main() {
+        float xx = 2.1;
+        loopIt(xx);  // T = float
+        // Output: 2.13.14.1
+    }
+
+ĐẶC ĐIỂM:
+- Compiler tự suy diễn kiểu T
+- x++ là post-increment: trả về giá trị cũ rồi mới tăng
+
+5.2. TEMPLATE SPECIALIZATION (CHUYÊN BIỆT HÓA)
+-----------------------------------------------
+VÍ DỤ TỪ CÂU 15:
+
+    template <class T>
+    T Func(T& x, T& y) {
+        cout << "1";
+        return (x > y) ? x : y;
+    }
+    
+    // Specialization cho int
+    template <>
+    int Func<int>(int& x, int& y) {
+        cout << "2";
+        return (x > y) ? x : y;
+    }
+    
+    int main() {
+        int x = 10, y = 20;
+        cout << Func<int>(x, y);
+        // Output: 220
+        // (In "2" từ hàm chuyên biệt, rồi in 20)
+    }
+
+QUY TẮC:
+- Template chuyên biệt được ƯU TIÊN hơn template tổng quát
+- Dùng khi muốn xử lý đặc biệt cho một kiểu cụ thể
+
+5.3. TEMPLATE VỚI NON-TYPE PARAMETER
+-------------------------------------
+VÍ DỤ TỪ CÂU 19:
+
+    template <class T, int max>
+    int Func(T arr[], int n) {
+        int min_val = max;
+        for (int i = 0; i < n; i++)
+            if (arr[i] < min_val)
+                min_val = arr[i];
+        return min_val;
+    }
+    
+    int main() {
+        int arr_x[] = {10, 20, 15, 12};
+        char arr_y[] = {1, 2, 3};
+        
+        cout << Func<int, 10000>(arr_x, 4);    // 10
+        cout << Func<char, 256>(arr_y, 3);     // 1
+        // Output: 101
+    }
+
+ĐẶC ĐIỂM:
+- Template có thể nhận tham số giá trị (int max)
+- Giá trị phải là hằng số tại compile-time
+
+5.4. CLASS TEMPLATE
+-------------------
+VÍ DỤ TỪ CÂU 20:
+
+    template<class T>
+    class Exam {
+    public:
+        Exam() { cout << "C"; }
+        ~Exam() { cout << "D"; }
+    };
+    
+    int main() {
+        Exam obj;  // COMPILE ERROR!
+        // Phải chỉ định kiểu: Exam<int> obj;
+    }
+
+QUY TẮC:
+- Class template BẮT BUỘC chỉ định kiểu khi khởi tạo
+- Cú pháp: ClassName<Type> objectName;
+
+VÍ DỤ TỪ CÂU 26 (BIẾN STATIC TRONG TEMPLATE):
+
+    template <class T>
+    class Exam {
+    public:
+        static T prop_x;
+    private:
+        static T prop_y;
+    };
+    
+    template <class T>
+    T Exam<T>::prop_x = 1;
+    
+    template <class T>
+    T Exam<T>::prop_y = 1.2;
+    
+    int main() {
+        Exam<int> obj_i;
+        // Exam<int>::prop_x = 1
+        // Exam<int>::prop_y = 1 (ép kiểu từ 1.2)
+        
+        Exam<double> obj_d;
+        // Exam<double>::prop_x = 1.0
+        // Exam<double>::prop_y = 1.2
+        
+        // CHÚ Ý: Biến static RIÊNG BIỆT cho từng kiểu T
+    }
+
+QUAN TRỌNG:
+- Biến static trong template class là RIÊNG cho mỗi kiểu
+- Exam<int>::prop_x KHÁC Exam<double>::prop_x
+
+5.5. LÝ THUYẾT VỀ TEMPLATE
+---------------------------
+VÍ DỤ TỪ CÂU 10:
+
+CÂU HỎI: Từ khóa nào thay thế template?
+ĐÁP ÁN: auto
+
+TRONG C++20:
+    // Cũ:
+    template<typename T>
+    T add(T a, T b) { return a + b; }
+    
+    // Mới (Abbreviated Function Template):
+    auto add(auto a, auto b) { return a + b; }
+
+VÍ DỤ TỪ CÂU 11:
+
+CÂU HỎI: Phát biểu nào đúng về Template?
+ĐÁP ÁN: Template là ví dụ về đa hình compile-time
+
+GIẢI THÍCH:
+- Template = Static/Compile-time Polymorphism
+- Virtual Function = Dynamic/Runtime Polymorphism
+
+================================================================================
+6. EXCEPTION HANDLING
+================================================================================
+
+6.1. CẤU TRÚC Cơ BẢN
+--------------------
+    try {
+        // Code có thể gây lỗi
+        throw exception;  // Ném ngoại lệ
+    }
+    catch (ExceptionType e) {
+        // Xử lý ngoại lệ
+    }
+
+6.2. LUỒNG THỰC THI
+-------------------
+VÍ DỤ TỪ CÂU 17:
+
+    int main() {
+        try {
+            throw 1;  // Ném ra số nguyên
+        }
+        catch (int& e) {
+            cout << "exception number " << e;
+            return 0;  // Kết thúc ngay
+        }
+        cout << "No exception";  // KHÔNG BAO GIỜ CHẠY
+        return 0;
+    }
+    // Output: exception number 1
+
+VÍ DỤ TỪ CÂU 21:
+
+    int main() {
+        int var_i = -12;
+        try {
+            cout << "Inside try" << endl;
+            if (var_i < 0) {
+                throw var_i;
+                cout << "After throw" << endl;  // BỊ BỎ QUA
+            }
+        }
+        catch (int var_i) {
+            cout << "Exception Caught" << endl;
+        }
+        cout << "After catch" << endl;
+        return 0;
+    }
+    // Output: Inside try
+    //         Exception Caught
+    //         After catch
+
+QUY TẮC:
+- Khi throw, luồng NHẢY NGAY sang catch
+- Code sau throw trong try bị bỏ qua
+- Sau khi xử lý catch xong, tiếp tục code bình thường
+
+6.3. THROW TRONG HÀM
+--------------------
+VÍ DỤ TỪ CÂU 18:
+
+    void Func(int x, int y) {
+        if (y == 0)
+            throw "Error!";  // Ném chuỗi
+        else
+            cout << x << y;
+    }
+    
+    int main() {
+        try {
+            Func(5, 0);
+        }
+        catch (char* e) {  // Bắt chuỗi
+            cout << e;
+        }
+        return 0;
+    }
+    // Output: Error!
+
+LƯU Ý:
+- "Error!" là const char* (trong C++ nghiêm ngặt)
+- Đề thi thường cho phép catch(char* e) bắt được
+
+VÍ DỤ TỪ CÂU 31:
+
+    double Func(int x, int y) {
+        if (y == 0)
+            throw "Error!";
+        return (x / y);
+    }
+    
+    int main() {
+        try {
+            double z = Func(50, 0);
+            cout << z;  // Không chạy
+        }
+        catch (const char* e) {
+            cout << e;
+        }
+        return 0;
+    }
+    // Output: Error!
+
+6.4. THROW TRONG VÒNG LẶP
+--------------------------
+VÍ DỤ TỪ CÂU 38:
+
+    void Func(int x) {
+        int y = 1;
+        while (true) {
+            if (y >= x)
+                throw y;
+            cout << y;
+            y++;
+        }
+    }
+    
+    int main() {
+        try {
+            Func(2);
+        }
+        catch (int e) {
+            cout << "exception:" << e;
+        }
+        return 0;
+    }
+    // Vòng 1: y=1, in "1", y++
+    // Vòng 2: y=2, 2>=2 đúng, throw 2
+    // Output: 1exception:2
+
+6.5. EXCEPTION VỚI CLASS
+------------------------
+VÍ DỤ TỪ CÂU 34:
+
+    class Base {
+    public:
+        int prop_a;
+        Base() : prop_a(1) { }
+    };
+    
+    class Derived : public Base {
+    public:
+        int prop_b;
+        Derived() : prop_b(2) { }
+    };
+    
+    void Func() {
+        Derived obj;
+        throw obj;  // Ném OBJECT (value)
+    }
+    
+    int main() {
+        try {
+            Func();
+        }
+        catch (Derived* e) {  // Bắt CON TRỎ → KHÔNG BẮT ĐƯỢC
+            cout << e->prop_b;
+        }
+        catch (Base e) {  // Bắt VALUE → BẮT ĐƯỢC
+            cout << e.prop_a;  // Object Slicing
+        }
+        return 0;
+    }
+    // Output: 1
+
+QUY TẮC:
+- throw obj → Ném object (value)
+- catch (Type* e) → Bắt con trỏ (không khớp)
+- catch (Type e) → Bắt value (khớp)
+- Lớp con có thể bị bắt bởi catch của lớp cha
+
+VÍ DỤ TỪ CÂU 47:
+
+    class Base { };
+    class Derived : public Base { };
+    
+    void Func() {
+        throw Derived();
+    }
+    
+    int main() {
+        try {
+            Func();
+        }
+        catch (const Base&) {  // Bắt tham chiếu Base
+            cerr << "Caught a exception";
+        }
+        return 0;
+    }
+    // Output: Caught a exception
+
+QUY TẮC:
+- catch(Base&) có thể bắt exception kiểu Derived
+- Tận dụng quan hệ kế thừa
+
+6.6. EXCEPTION VỚI NEW
+----------------------
+VÍ DỤ TỪ CÂU 12:
+
+    int main() {
+        char* ptr;
+        try {
+            ptr = new char[1024];
+            if (ptr == 0)
+                throw "Error!";
+            else
+                cout << sizeof(ptr);  // Kích thước CON TRỎ
+        }
+        catch (char* e) {
+            cout << e;
+        }
+        return 0;
+    }
+    // Output: 4 (32-bit) hoặc 8 (64-bit)
+
+LƯU Ý:
+- sizeof(ptr) = kích thước con trỏ (4 hoặc 8 bytes)
+- KHÔNG PHẢI kích thước mảng (1024)
+
+VÍ DỤ TỪ CÂU 28:
+
+    int main() {
+        try {
+            double* ptr = new double[1000];  // 8KB
+            cout << "Memory allocated";
+        }
+        catch (exception& e) {
+            cout << "Exception arised";
+        }
+        return 0;
+    }
+    // Output: Memory allocated
+    // (1000 phần tử quá nhỏ, hiếm khi fail)
+
+================================================================================
+7. CÁC LỖI THƯỜNG GẶP
+================================================================================
+
+7.1. LỖI TRUY CẬP THÔNG QUA CON TRỎ CHA
+----------------------------------------
+❌ LỖI:
+    Base* ptr = new Derived;
+    cout << ptr->x;  // x chỉ có trong Derived
+    // COMPILE ERROR! Base không có x
+
+✓ SỬA:
+    Derived* ptr = new Derived;
+    cout << ptr->x;
+    
+    // Hoặc cast:
+    Base* b_ptr = new Derived;
+    Derived* d_ptr = dynamic_cast<Derived*>(b_ptr);
+    cout << d_ptr->x;
+
+7.2. LỖI VIRTUAL CONSTRUCTOR
+-----------------------------
+❌ LỖI:
+    class Base {
+    public:
+        virtual Base();  // KHÔNG HỢP LỆ
+    };
+
+LÝ DO:
+- Constructor tạo object
+- Virtual cần object đã tồn tại
+- Mâu thuẫn logic
+
+7.3. LỖI VIRTUAL STATIC
+-----------------------
+❌ LỖI:
+    class Base {
+    public:
+        virtual static void Func();  // KHÔNG HỢP LỆ
+    };
+
+LÝ DO:
+- Static: Không có 'this'
+- Virtual: Cần 'this' để tra vtable
+- Không tương thích
+
+7.4. LỖI KHỞI TẠO TEMPLATE
+---------------------------
+❌ LỖI:
+    template<class T>
+    class Exam { };
+    
+    Exam obj;  // COMPILE ERROR!
+
+✓ SỬA:
+    Exam<int> obj;  // Phải chỉ định kiểu
+
+7.5. LỖI ABSTRACT CLASS
+------------------------
+❌ LỖI:
+    class Base {
+    public:
+        virtual void Func() = 0;  // Pure virtual
+    };
+    
+    Base obj;  // COMPILE ERROR!
+
+✓ SỬA:
+    Base* ptr = new Derived();  // Con trỏ OK
+
+7.6. LỖI EXCEPTION TYPE MISMATCH
+---------------------------------
+❌ LỖI:
+    throw Derived();  // Ném object
+    catch (Derived* e) { }  // Bắt pointer → KHÔNG BẮT ĐƯỢC
+
+✓ SỬA:
+    catch (Derived& e) { }  // Bắt reference
+    // hoặc
+    catch (Base& e) { }  // Bắt bằng lớp cha
+
+7.7. LỖI OBJECT SLICING
+------------------------
+❌ LỖI:
+    void func(Base obj) {  // Pass by value
+        obj.print();  // Mất tính đa hình
+    }
+    
+    Derived d;
+    func(d);  // Bị cắt!
+
+✓ SỬA:
+    void func(Base& obj) {  // Pass by reference
+        obj.print();
+    }
+
+7.8. LỖI CONSTRUCTOR INITIALIZATION
+------------------------------------
+❌ LỖI:
+    class Base {
+    public:
+        Base(int x);  // Không có default constructor
+    };
+    
+    class Derived : public Base {
+    public:
+        Derived(int i) : x(i) { }  // LỖI: x là của Base
+    };
+
+✓ SỬA:
+    Derived(int i) : Base(i) { }
+
+7.9. LỖI FUNCTION HIDING
+-------------------------
+❌ KHÔNG MONG MUỐN:
+    class Base {
+    public:
+        void func(double x) { }
+    };
+    
+    class Derived : public Base {
+    public:
+        void func(int x) { }
+    };
+    
+    Derived d;
+    d.func(1.5);  // Gọi func(int), không phải func(double)!
+
+✓ SỬA:
+    class Derived : public Base {
+    public:
+        using Base::func;  // Đưa func(double) vào scope
+        void func(int x) { }
+    };
+
+7.10. LỖI SIZEOF VỚI POINTER
+-----------------------------
+❌ NHẦM LẪN:
+    int* arr = new int[1000];
+    cout << sizeof(arr);  // 4 hoặc 8 (kích thước pointer)
+    // KHÔNG PHẢI 4000!
+
+✓ ĐÚNG:
+    sizeof(arr) = kích thước con trỏ
+    Muốn biết số phần tử → Phải tự lưu
+
+================================================================================
+8. TIPS & TRICKS
+================================================================================
+
+8.1. SO SÁNH STATIC VS DYNAMIC BINDING
+---------------------------------------
+┌─────────────────┬──────────────────┬──────────────────┐
+│                 │ STATIC BINDING   │ DYNAMIC BINDING  │
+├─────────────────┼──────────────────┼──────────────────┤
+│ Từ khóa         │ (không có)       │ virtual          │
+│ Quyết định lúc  │ Compile-time     │ Runtime          │
+│ Dựa vào         │ Kiểu con trỏ     │ Object thực tế   │
+│ Hiệu suất       │ Nhanh hơn        │ Chậm hơn (vtable)│
+│ Linh hoạt       │ Không            │ Có               │
+│ Kích thước      │ Nhỏ hơn          │ Lớn hơn (vptr)   │
+└─────────────────┴──────────────────┴──────────────────┘
+
+8.2. KHI NÀO DÙNG VIRTUAL?
+---------------------------
+✓ DÙNG VIRTUAL KHI:
+- Muốn đa hình runtime
+- Con trỏ/tham chiếu lớp cha trỏ tới object con
+- Muốn lớp con override hàm
+- Destructor trong lớp có virtual function
+
+❌ KHÔNG DÙNG VIRTUAL KHI:
+- Không cần đa hình
+- Ưu tiên hiệu suất
+- Hàm static
+- Constructor
+
+8.3. STRUCT VS CLASS
+--------------------
+┌─────────────────┬──────────┬─────────┐
+│                 │ struct   │ class   │
+├─────────────────┼──────────┼─────────┤
+│ Access mặc định │ public   │ private │
+│ Kế thừa mặc định│ public   │ private │
+│ Dùng khi        │ Dữ liệu  │ OOP     │
+└─────────────────┴──────────┴─────────┘
+
+8.4. CHECKLIST DEBUG
+--------------------
+□ Hàm có virtual không?
+□ Truyền bằng value/reference/pointer?
+□ Constructor lớp cha có được gọi đúng?
+□ Có Object Slicing không?
+□ Con trỏ có trỏ đúng type không?
+□ Exception type có khớp không?
+□ Template có chỉ định type không?
+□ sizeof() đo con trỏ hay object?
+
+8.5. THỨ TỰ ƯU TIÊN CATCH
+--------------------------
+    try {
+        throw Derived();
+    }
+    catch (Derived& e) { }   // 1. Bắt CHÍNH XÁC nhất
+    catch (Base& e) { }      // 2. Bắt lớp cha
+    catch (...) { }          // 3. Bắt tất cả (catch-all)
+
+QUY TẮC:
+- Đặt catch CỤ THỂ trước
+- Đặt catch TỔNG QUÁT sau
+- Nếu ngược lại → Catch tổng quát sẽ che mất catch cụ thể
+
+8.6. MEMORY LAYOUT (32-BIT)
+----------------------------
+    class NoVirtual {
+        int x;  // 4 bytes
+    };
+    sizeof(NoVirtual) = 4
+    
+    class WithVirtual {
+        int x;  // 4 bytes
+        virtual void f() { }  // +4 bytes (vptr)
+    };
+    sizeof(WithVirtual) = 8
+
+    class MultiInherit : public Base1, public Base2 {
+        int x;
+    };
+    sizeof(MultiInherit) = sizeof(Base1) + sizeof(Base2) + 4
+
+8.7. COMMON PITFALLS (BẪY THƯỜNG GẶP)
+--------------------------------------
+1. Quên 'virtual' trước destructor trong base class
+2. Pass by value khi cần pass by reference
+3. Dùng Base::func() thay vì để virtual tự chọn
+4. Quên gọi constructor cha trong initializer list
+5. Nhầm sizeof(pointer) với sizeof(array)
+6. Throw object nhưng catch pointer
+7. Quên chỉ định type cho template class
+8. Static function không thể là virtual
+
+8.8. BEST PRACTICES
+-------------------
+✓ LUÔN dùng virtual destructor nếu có virtual function
+✓ LUÔN dùng override (C++11) để tránh lỗi typo
+✓ ƯU TIÊN reference/pointer hơn value để tránh slicing
+✓ ƯU TIÊN const reference khi không cần modify
+✓ Dùng smart pointer (unique_ptr, shared_ptr) thay vì raw pointer
+✓ Catch exception bằng const reference: catch(const Exception& e)
+✓ Dùng initializer list thay vì gán trong constructor body
+
+8.9. CODE TEMPLATE CHUẨN
+-------------------------
+// Base class với virtual
+class Base {
+public:
+    virtual void func() { }
+    virtual ~Base() { }  // Virtual destructor
+};
+
+// Derived class
+class Derived : public Base {
+public:
+    void func() override { }  // Override (C++11)
+    ~Derived() override { }
+};
+
+// Sử dụng
+void process(Base& obj) {  // Pass by reference
+    obj.func();  // Dynamic binding
+}
+
+int main() {
+    Derived d;
+    process(d);  // Đúng!
+    
+    Base* ptr = new Derived;
+    ptr->func();  // Dynamic binding
+    delete ptr;  // Gọi ~Derived() rồi ~Base()
+}
+
+8.10. CÔNG THỨC NHANH
+---------------------
+• Thứ tự Constructor: CHA → CON → CON → CHA
+• Thứ tự Destructor: CON → CHA (ngược lại)
+• sizeof(class với virtual) = sizeof(data) + 4/8 (vptr)
+• Đa kế thừa: sizeof = tổng các base + own data
+• Template: Biến static riêng cho mỗi type
+• Exception: Con bắt được bởi cha
+• Object Slicing: Value = cắt, Reference/Pointer = giữ nguyên
+
+================================================================================
+TỔNG KẾT
+================================================================================
+
+CÁC ĐIỂM THEN CHỐT CẦN NHỚ:
+
+1. VIRTUAL FUNCTION
+   - Cho phép đa hình runtime
+   - Tăng kích thước object (thêm vptr)
+   - Không thể là constructor hay static
+   - Destructor NÊN là virtual nếu có virtual function
+
+2. KẾ THỪA
+   - Constructor: Cha → Con
+   - Destructor: Con → Cha
+   - Phải gọi constructor cha nếu không có default
+   - Name hiding: Con che cha nếu trùng tên
+
+3. ĐA HÌNH
+   - Static binding: Dựa vào kiểu con trỏ
+   - Dynamic binding: Dựa vào object thực tế
+   - Cần virtual + reference/pointer
+   - Tránh Object Slicing
+
+4. TEMPLATE
+   - Compile-time polymorphism
+   - Biến static riêng cho mỗi type
+   - Class template phải chỉ định type
+   - Có thể chuyên biệt hóa (specialization)
+
+5. EXCEPTION
+   - throw → nhảy ngay sang catch
+   - Con bắt được bởi cha
+   - Đặt catch cụ thể trước, tổng quát sau
+   - Catch bằng reference để tránh slicing
+
+6. LỖI THƯỜNG GẶP
+   - Quên virtual destructor
+   - Pass by value → slicing
+   - Truy cập thành viên con qua con trỏ cha
+   - Virtual constructor/static
+   - Quên gọi constructor cha
+
+HỌC CÁCH NÀO?
+- Làm từng câu một, hiểu TẠI SAO
+- Vẽ sơ đồ bộ nhớ
+- Trace từng bước thực thi
+- So sánh các trường hợp tương tự
+- Tự tạo ví dụ đơn giản để test
+
+CHÚC BẠN ÔN TẬP TỐT VÀ ĐẠT ĐIỂM CAO!
+
+================================================================================

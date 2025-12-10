@@ -1,0 +1,21 @@
+# Object files
+*.o
+obj/*.o
+
+# Executable
+*.exe
+main.exe
+
+# Compiled files
+*.out
+*.app
+
+# IDE
+.vscode/
+.vs/
+*.suo
+*.user
+
+# Temp files
+*.tmp
+*~

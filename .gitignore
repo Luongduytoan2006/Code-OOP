@@ -1,0 +1,6 @@
+*.exe
+*.zip
+*.tar.gz
+.vscode
+node_modules
+.DS_Store

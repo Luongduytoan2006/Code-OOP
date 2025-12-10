@@ -1,0 +1,1048 @@
+================================================================================
+                    TÀI LIỆU ÔN TẬP OOP - GIỮA KÌ
+        INHERITANCE + OPERATOR OVERLOADING (TỔNG HỢP)
+================================================================================
+
+MỤC LỤC:
+1. INHERITANCE (KẾ THỪA)
+2. CONSTRUCTOR & DESTRUCTOR ORDER
+3. VIRTUAL FUNCTIONS & POLYMORPHISM
+4. OPERATOR OVERLOADING VỚI INHERITANCE
+5. STATIC MEMBERS
+6. TYPE CONVERSION
+7. CÁC LỖI THƯỜNG GẶP
+8. TIPS & TRICKS
+
+================================================================================
+1. INHERITANCE (KẾ THỪA)
+================================================================================
+
+1.1. KHÁI NIỆM CƠ BẢN
+----------------------
+Inheritance cho phép class con kế thừa properties và methods từ class cha.
+
+CÚ PHÁP:
+    class Base {
+    protected:
+        int value;
+    public:
+        Base(int v) : value(v) {}
+        void show() { cout << value; }
+    };
+    
+    class Derived : public Base {
+    public:
+        Derived(int v) : Base(v) {}  // Gọi constructor cha
+    };
+
+LOẠI KẾ THỪA:
+- public: public → public, protected → protected
+- protected: public → protected, protected → protected
+- private: public → private, protected → private
+
+1.2. SINGLE INHERITANCE
+-----------------------
+VÍ DỤ TỪ TEST:
+
+    class Person {
+    protected:
+        string name;
+        int age;
+    public:
+        Person(string n, int a) : name(n), age(a) {}
+        void display() {
+            cout << name << " " << age;
+        }
+    };
+    
+    class Student : public Person {
+        int studentID;
+    public:
+        Student(string n, int a, int id) 
+            : Person(n, a), studentID(id) {}
+        
+        void show() {
+            display();  // Gọi method của cha
+            cout << " " << studentID;
+        }
+    };
+
+ĐẶC ĐIỂM:
+✓ Class con kế thừa TẤT CẢ members của cha
+✓ Có quyền truy cập public và protected (không phải private)
+✓ Có thể override methods của cha
+
+1.3. MULTIPLE INHERITANCE
+--------------------------
+VÍ DỤ TỪ TEST:
+
+    class A {
+    protected:
+        int a;
+    public:
+        A(int x) : a(x) { cout << "A"; }
+        ~A() { cout << "~A"; }
+    };
+    
+    class B {
+    protected:
+        int b;
+    public:
+        B(int x) : b(x) { cout << "B"; }
+        ~B() { cout << "~B"; }
+    };
+    
+    class C : public A, public B {
+        int c;
+    public:
+        C(int x, int y, int z) : A(x), B(y), c(z) {
+            cout << "C";
+        }
+        ~C() { cout << "~C"; }
+    };
+    
+    int main() {
+        C obj(1, 2, 3);
+        // Output: ABC
+        // Destructor: ~C~B~A (reverse order)
+    }
+
+THỨ TỰ:
+- Constructor: Theo thứ tự khai báo base classes (A, B, C)
+- Destructor: Ngược lại (~C, ~B, ~A)
+
+1.4. DIAMOND PROBLEM
+--------------------
+VÍ DỤ:
+    class Base {
+    public:
+        int value;
+    };
+    
+    class A : public Base {};
+    class B : public Base {};
+    
+    class C : public A, public B {
+    public:
+        void func() {
+            // value;  // AMBIGUOUS! A::value hay B::value?
+            A::value = 10;  // Phải chỉ định rõ
+            B::value = 20;
+        }
+    };
+
+GIẢI PHÁP: Virtual Inheritance
+    class A : virtual public Base {};
+    class B : virtual public Base {};
+    
+    class C : public A, public B {
+        // Chỉ có 1 copy của Base
+    };
+
+================================================================================
+2. CONSTRUCTOR & DESTRUCTOR ORDER
+================================================================================
+
+2.1. CONSTRUCTOR ORDER
+----------------------
+VÍ DỤ TỪ TEST (test.cpp):
+
+    class Base {
+    public:
+        Base() { cout << "Base"; }
+    };
+    
+    class Derived : public Base {
+    public:
+        Derived() { cout << "Derived"; }
+    };
+    
+    int main() {
+        Derived d;
+        // Output: BaseDerived
+    }
+
+THỨ TỰ:
+1. Base class constructor
+2. Member objects constructor
+3. Derived class constructor
+
+2.2. DESTRUCTOR ORDER
+---------------------
+VÍ DỤ TỪ TEST (test2.cpp):
+
+    class Base {
+    public:
+        ~Base() { cout << "~Base"; }
+    };
+    
+    class Derived : public Base {
+    public:
+        ~Derived() { cout << "~Derived"; }
+    };
+    
+    int main() {
+        Derived d;
+        // Output khi kết thúc: ~Derived~Base
+    }
+
+THỨ TỰ:
+1. Derived class destructor
+2. Member objects destructor
+3. Base class destructor
+
+QUAN TRỌNG: NGƯỢC LẠI với constructor!
+
+2.3. VIRTUAL DESTRUCTOR
+-----------------------
+VÍ DỤ TỪ TEST (test3.cpp):
+
+    class Base {
+    public:
+        virtual ~Base() { cout << "~Base"; }
+    };
+    
+    class Derived : public Base {
+    public:
+        ~Derived() { cout << "~Derived"; }
+    };
+    
+    int main() {
+        Base* ptr = new Derived;
+        delete ptr;
+        // Với virtual: ~Derived~Base
+        // Không virtual: CHỈ ~Base (MEMORY LEAK!)
+    }
+
+QUY TẮC VÀNG:
+✓ Nếu class có virtual function → PHẢI có virtual destructor
+✓ Nếu class được dùng làm base class → Nên có virtual destructor
+
+2.4. MEMBER INITIALIZATION LIST
+--------------------------------
+VÍ DỤ TỪ TEST:
+
+    class Base {
+        int x;
+    public:
+        Base(int val) : x(val) {
+            cout << "Base(" << x << ")";
+        }
+    };
+    
+    class Derived : public Base {
+        int y;
+    public:
+        Derived(int a, int b) : Base(a), y(b) {
+            cout << "Derived(" << y << ")";
+        }
+    };
+    
+    int main() {
+        Derived d(10, 20);
+        // Output: Base(10)Derived(20)
+    }
+
+THỨ TỰ KHỞI TẠO:
+1. Base class (theo thứ tự khai báo)
+2. Member variables (theo thứ tự khai báo trong class)
+3. Constructor body
+
+================================================================================
+3. VIRTUAL FUNCTIONS & POLYMORPHISM
+================================================================================
+
+3.1. VIRTUAL FUNCTION
+---------------------
+VÍ DỤ TỪ TEST (test4.cpp):
+
+    class Animal {
+    public:
+        virtual void sound() {
+            cout << "Animal sound";
+        }
+    };
+    
+    class Dog : public Animal {
+    public:
+        void sound() override {  // Override virtual function
+            cout << "Woof";
+        }
+    };
+    
+    int main() {
+        Animal* ptr = new Dog;
+        ptr->sound();  // "Woof" (dynamic binding)
+        
+        Animal& ref = Dog();
+        ref.sound();   // "Woof"
+        
+        delete ptr;
+    }
+
+ĐẶC ĐIỂM:
+✓ Dynamic binding (runtime polymorphism)
+✓ Gọi function của derived class qua base pointer/reference
+✓ Dùng override để đảm bảo đúng signature
+
+3.2. PURE VIRTUAL FUNCTION
+---------------------------
+VÍ DỤ:
+    class Shape {
+    public:
+        virtual double area() = 0;  // Pure virtual (abstract)
+        virtual ~Shape() {}
+    };
+    
+    class Circle : public Shape {
+        double radius;
+    public:
+        double area() override {
+            return 3.14 * radius * radius;
+        }
+    };
+    
+    int main() {
+        // Shape s;  // ERROR! Cannot instantiate abstract class
+        Shape* ptr = new Circle();  // OK
+    }
+
+ABSTRACT CLASS:
+- Có ít nhất 1 pure virtual function
+- Không thể tạo object trực tiếp
+- Dùng làm interface
+
+3.3. VIRTUAL TABLE (VTABLE)
+----------------------------
+Cơ chế hoạt động:
+1. Compiler tạo vtable cho mỗi class có virtual function
+2. Mỗi object có vptr trỏ đến vtable
+3. Khi gọi virtual function → lookup trong vtable
+
+OVERHEAD:
+- Memory: vptr trong mỗi object (4/8 bytes)
+- Performance: Indirect function call
+
+================================================================================
+4. OPERATOR OVERLOADING VỚI INHERITANCE
+================================================================================
+
+4.1. ARITHMETIC OPERATORS
+--------------------------
+VÍ DỤ TỪ TEST:
+
+    class Complex {
+    protected:
+        double real, imag;
+    public:
+        Complex(double r = 0, double i = 0) : real(r), imag(i) {}
+        
+        // operator+ as member function
+        Complex operator+(const Complex& other) const {
+            return Complex(real + other.real, imag + other.imag);
+        }
+        
+        // operator+= 
+        Complex& operator+=(const Complex& other) {
+            real += other.real;
+            imag += other.imag;
+            return *this;
+        }
+    };
+    
+    class ExtendedComplex : public Complex {
+        string name;
+    public:
+        ExtendedComplex(double r, double i, string n) 
+            : Complex(r, i), name(n) {}
+    };
+
+LƯU Ý:
+- Operators được kế thừa NHƯNG return type vẫn là Base
+- Có thể cần override để return Derived type
+
+4.2. COMPARISON OPERATORS
+--------------------------
+VÍ DỤ TỪ TEST:
+
+    class Point {
+    protected:
+        int x, y;
+    public:
+        Point(int a, int b) : x(a), y(b) {}
+        
+        bool operator==(const Point& other) const {
+            return x == other.x && y == other.y;
+        }
+        
+        bool operator<(const Point& other) const {
+            return (x*x + y*y) < (other.x*other.x + other.y*other.y);
+        }
+    };
+    
+    class Point3D : public Point {
+        int z;
+    public:
+        Point3D(int a, int b, int c) : Point(a, b), z(c) {}
+        
+        bool operator==(const Point3D& other) const {
+            return Point::operator==(other) && z == other.z;
+        }
+    };
+
+PATTERN:
+✓ Gọi base class operator
+✓ Thêm logic cho derived members
+
+4.3. STREAM OPERATORS
+----------------------
+VÍ DỤ TỪ TEST:
+
+    class Base {
+    protected:
+        int value;
+    public:
+        Base(int v) : value(v) {}
+        
+        friend ostream& operator<<(ostream& os, const Base& obj) {
+            return os << obj.value;
+        }
+    };
+    
+    class Derived : public Base {
+        int extra;
+    public:
+        Derived(int v, int e) : Base(v), extra(e) {}
+        
+        friend ostream& operator<<(ostream& os, const Derived& obj) {
+            // Không thể gọi Base::operator<< trực tiếp với friend
+            os << static_cast<const Base&>(obj);  // Cast to base
+            return os << " " << obj.extra;
+        }
+    };
+
+LƯU Ý:
+- Friend function KHÔNG được kế thừa
+- Phải override cho derived class
+- Có thể cast to base để reuse logic
+
+4.4. ASSIGNMENT OPERATOR VỚI INHERITANCE
+-----------------------------------------
+VÍ DỤ TỪ TEST:
+
+    class Base {
+    protected:
+        int* data;
+    public:
+        Base(int val) {
+            data = new int(val);
+        }
+        
+        Base& operator=(const Base& other) {
+            if (this != &other) {
+                delete data;
+                data = new int(*other.data);
+            }
+            return *this;
+        }
+        
+        virtual ~Base() {
+            delete data;
+        }
+    };
+    
+    class Derived : public Base {
+        int* extra;
+    public:
+        Derived(int v, int e) : Base(v) {
+            extra = new int(e);
+        }
+        
+        Derived& operator=(const Derived& other) {
+            if (this != &other) {
+                Base::operator=(other);  // Gọi base assignment
+                delete extra;
+                extra = new int(*other.extra);
+            }
+            return *this;
+        }
+        
+        ~Derived() {
+            delete extra;
+        }
+    };
+
+CHECKLIST:
+□ Self-assignment check
+□ Gọi base class operator=
+□ Deep copy cho pointers
+□ Return *this
+
+4.5. TYPE CONVERSION OPERATORS
+-------------------------------
+VÍ DỤ TỪ TEST:
+
+    class Base {
+        int value;
+    public:
+        Base(int v) : value(v) {}
+        
+        // Implicit conversion to int
+        operator int() const {
+            return value;
+        }
+    };
+    
+    class Derived : public Base {
+    public:
+        Derived(int v) : Base(v) {}
+        
+        // Conversion to double
+        operator double() const {
+            int baseValue = Base::operator int();
+            return baseValue * 1.5;
+        }
+    };
+    
+    int main() {
+        Derived d(10);
+        int x = d;      // 10
+        double y = d;   // 15.0
+    }
+
+================================================================================
+5. STATIC MEMBERS
+================================================================================
+
+5.1. STATIC DATA MEMBER VỚI INHERITANCE
+----------------------------------------
+VÍ DỤ TỪ TEST:
+
+    class Base {
+    protected:
+        static int count;
+    public:
+        Base() { ++count; }
+        static int getCount() { return count; }
+    };
+    
+    int Base::count = 0;  // Definition
+    
+    class Derived : public Base {
+    public:
+        Derived() : Base() {}
+    };
+    
+    int main() {
+        Base b1, b2;
+        Derived d1;
+        cout << Base::count;  // 3 (shared!)
+    }
+
+ĐẶC ĐIỂM:
+✓ Static members được SHARED giữa base và derived
+✓ Chỉ có 1 copy dù có bao nhiêu derived classes
+
+5.2. STATIC MEMBER FUNCTION
+----------------------------
+VÍ DỤ TỪ TEST:
+
+    class Base {
+        static int value;
+    public:
+        static void setValue(int v) {
+            value = v;
+        }
+        static int getValue() {
+            return value;
+        }
+    };
+    
+    int Base::value = 0;
+    
+    class Derived : public Base {
+    public:
+        static void display() {
+            cout << getValue();  // Gọi static function của base
+        }
+    };
+    
+    int main() {
+        Base::setValue(10);
+        Derived::display();  // 10
+    }
+
+5.3. STATIC LOCAL VARIABLES
+----------------------------
+VÍ DỤ TỪ TEST:
+
+    class Base {
+    public:
+        void func() {
+            static int counter = 0;  // Khởi tạo 1 lần
+            cout << ++counter << " ";
+        }
+    };
+    
+    int main() {
+        Base b1, b2;
+        b1.func();  // 1
+        b2.func();  // 2
+        b1.func();  // 3
+    }
+
+ĐẶC ĐIỂM:
+✓ Khởi tạo 1 lần duy nhất
+✓ Giữ giá trị giữa các lần gọi
+✓ Scope trong function, lifetime như global
+
+================================================================================
+6. TYPE CONVERSION
+================================================================================
+
+6.1. IMPLICIT CONVERSION
+------------------------
+VÍ DỤ TỪ TEST:
+
+    class Base {
+        int value;
+    public:
+        Base(int v) : value(v) {}  // Converting constructor
+    };
+    
+    class Derived : public Base {
+    public:
+        Derived(int v) : Base(v) {}
+    };
+    
+    void func(Base obj) {
+        // ...
+    }
+    
+    int main() {
+        func(10);        // int → Base (implicit)
+        func(Derived(5)); // Derived → Base (slicing)
+    }
+
+6.2. EXPLICIT CONVERSION
+------------------------
+VÍ DỤ:
+    class Base {
+    public:
+        explicit Base(int v) {}  // Ngăn implicit conversion
+    };
+    
+    int main() {
+        // Base b = 10;  // ERROR!
+        Base b(10);      // OK
+        Base b2 = Base(10);  // OK
+    }
+
+DÙNG explicit KHI:
+- Constructor có 1 tham số
+- Muốn tránh unexpected conversions
+
+6.3. UPCASTING & DOWNCASTING
+-----------------------------
+VÍ DỤ TỪ TEST:
+
+    class Base {
+    public:
+        virtual void show() { cout << "Base"; }
+        virtual ~Base() {}
+    };
+    
+    class Derived : public Base {
+    public:
+        void show() override { cout << "Derived"; }
+        void derivedOnly() { cout << "Only in Derived"; }
+    };
+    
+    int main() {
+        // UPCASTING (an toàn, tự động)
+        Derived d;
+        Base* basePtr = &d;  // Derived* → Base*
+        basePtr->show();     // "Derived" (polymorphism)
+        
+        // DOWNCASTING (cần cẩn thận)
+        Base* bPtr = new Derived;
+        Derived* dPtr = dynamic_cast<Derived*>(bPtr);
+        if (dPtr) {
+            dPtr->derivedOnly();  // Safe
+        }
+        
+        delete bPtr;
+    }
+
+LOẠI CAST:
+- static_cast: Compile-time, không check
+- dynamic_cast: Runtime check, cần virtual function
+- const_cast: Remove const
+- reinterpret_cast: Low-level cast
+
+6.4. SLICING PROBLEM
+--------------------
+VÍ DỤ TỪ TEST:
+
+    class Base {
+    public:
+        int x;
+        Base(int v) : x(v) {}
+    };
+    
+    class Derived : public Base {
+    public:
+        int y;
+        Derived(int a, int b) : Base(a), y(b) {}
+    };
+    
+    void func(Base obj) {  // Pass by VALUE
+        cout << obj.x;
+    }
+    
+    int main() {
+        Derived d(10, 20);
+        func(d);  // SLICING! y bị mất
+    }
+
+GIẢI PHÁP:
+✓ Pass by reference: void func(Base& obj)
+✓ Pass by pointer: void func(Base* obj)
+
+================================================================================
+7. CÁC LỖI THƯỜNG GẶP
+================================================================================
+
+7.1. QUÊN VIRTUAL DESTRUCTOR
+-----------------------------
+❌ SAI:
+    class Base {
+    public:
+        ~Base() { cout << "~Base"; }  // Không virtual
+    };
+    
+    class Derived : public Base {
+        int* data;
+    public:
+        Derived() { data = new int[100]; }
+        ~Derived() { delete[] data; }  // Không được gọi!
+    };
+    
+    int main() {
+        Base* ptr = new Derived;
+        delete ptr;  // MEMORY LEAK! Chỉ gọi ~Base
+    }
+
+✓ ĐÚNG:
+    class Base {
+    public:
+        virtual ~Base() { cout << "~Base"; }
+    };
+
+7.2. OPERATOR= KHÔNG LÀ FRIEND
+-------------------------------
+❌ SAI:
+    class Base {
+        friend Base& operator=(Base& lhs, const Base& rhs) {
+            // operator= PHẢI là member function!
+        }
+    };
+
+✓ ĐÚNG:
+    class Base {
+        Base& operator=(const Base& other) {
+            if (this != &other) {
+                // Assignment logic
+            }
+            return *this;
+        }
+    };
+
+7.3. KHÔNG GỌI BASE CONSTRUCTOR
+--------------------------------
+❌ SAI:
+    class Base {
+        int x;
+    public:
+        Base(int v) : x(v) {}
+    };
+    
+    class Derived : public Base {
+        int y;
+    public:
+        Derived(int a, int b) : y(b) {  // Không gọi Base(a)
+            // ERROR! Base không có default constructor
+        }
+    };
+
+✓ ĐÚNG:
+    class Derived : public Base {
+        int y;
+    public:
+        Derived(int a, int b) : Base(a), y(b) {}
+    };
+
+7.4. HIDING BASE CLASS FUNCTIONS
+---------------------------------
+❌ NHẦM LẪN:
+    class Base {
+    public:
+        void func(int x) { cout << x; }
+    };
+    
+    class Derived : public Base {
+    public:
+        void func(double x) { cout << x; }  // HIDE Base::func
+    };
+    
+    int main() {
+        Derived d;
+        d.func(10);  // Gọi Derived::func(double), KO phải Base::func(int)
+    }
+
+✓ SỬA:
+    class Derived : public Base {
+    public:
+        using Base::func;  // Expose base function
+        void func(double x) { cout << x; }
+    };
+
+7.5. SLICING VỚI PASS BY VALUE
+-------------------------------
+❌ SAI:
+    void process(Base obj) {  // Pass by value
+        obj.virtualFunc();  // Chỉ gọi Base version
+    }
+    
+    int main() {
+        Derived d;
+        process(d);  // Slicing! Mất derived part
+    }
+
+✓ ĐÚNG:
+    void process(Base& obj) {  // Pass by reference
+        obj.virtualFunc();  // Polymorphism works
+    }
+
+7.6. STATIC MEMBER INITIALIZATION
+----------------------------------
+❌ SAI:
+    class Base {
+        static int count = 0;  // ERROR! Không init trong class
+    };
+
+✓ ĐÚNG:
+    class Base {
+        static int count;
+    };
+    
+    int Base::count = 0;  // Init ngoài class
+
+7.7. MULTIPLE INHERITANCE AMBIGUITY
+------------------------------------
+❌ SAI:
+    class A {
+    public:
+        void func() { cout << "A"; }
+    };
+    
+    class B {
+    public:
+        void func() { cout << "B"; }
+    };
+    
+    class C : public A, public B {
+    public:
+        void test() {
+            func();  // AMBIGUOUS! A::func hay B::func?
+        }
+    };
+
+✓ ĐÚNG:
+    void test() {
+        A::func();  // Chỉ định rõ ràng
+        B::func();
+    }
+
+================================================================================
+8. TIPS & TRICKS
+================================================================================
+
+8.1. INHERITANCE CHECKLIST
+---------------------------
+□ Base class có virtual destructor?
+□ Constructor gọi base constructor?
+□ Virtual functions cần override?
+□ Operator= gọi base operator=?
+□ Tránh slicing (dùng reference/pointer)?
+
+8.2. POLYMORPHISM CHECKLIST
+----------------------------
+□ Function cần virtual?
+□ Destructor cần virtual?
+□ Override keyword dùng đúng?
+□ Pure virtual cho abstract class?
+□ Dynamic binding qua pointer/reference?
+
+8.3. OPERATOR OVERLOADING CHECKLIST
+------------------------------------
+□ operator= là member function?
+□ operator<< là friend function?
+□ Return type đúng?
+□ Const correctness?
+□ Self-assignment check?
+
+8.4. BEST PRACTICES
+-------------------
+✓ Virtual destructor cho base class
+✓ Pass by reference để tránh slicing
+✓ Use override keyword
+✓ Prefer composition over inheritance
+✓ Follow Liskov Substitution Principle
+
+8.5. COMMON PATTERNS
+--------------------
+
+PATTERN 1: Factory Pattern
+    class Shape {
+    public:
+        virtual void draw() = 0;
+        virtual ~Shape() {}
+    };
+    
+    class ShapeFactory {
+    public:
+        static Shape* create(string type) {
+            if (type == "circle") return new Circle();
+            if (type == "square") return new Square();
+            return nullptr;
+        }
+    };
+
+PATTERN 2: Template Method
+    class Algorithm {
+    public:
+        void execute() {
+            step1();
+            step2();  // Virtual
+            step3();
+        }
+    protected:
+        void step1() { /*...*/ }
+        virtual void step2() = 0;  // Override in derived
+        void step3() { /*...*/ }
+    };
+
+PATTERN 3: Interface Pattern
+    class IDrawable {
+    public:
+        virtual void draw() = 0;
+        virtual ~IDrawable() {}
+    };
+    
+    class Circle : public IDrawable {
+    public:
+        void draw() override { /*...*/ }
+    };
+
+8.6. DEBUGGING TIPS
+-------------------
+• Thêm debug output trong constructor/destructor
+• Check vtable với typeid
+• Use dynamic_cast để verify types
+• Valgrind/AddressSanitizer cho memory issues
+
+VÍ DỤ DEBUG:
+    class Base {
+    public:
+        Base() { cout << "Base() at " << this << endl; }
+        virtual ~Base() { cout << "~Base() at " << this << endl; }
+    };
+
+8.7. PERFORMANCE TIPS
+---------------------
+✓ Virtual functions có overhead nhỏ
+✓ Inline functions không thể virtual
+✓ Template thường nhanh hơn virtual (compile-time)
+✓ Avoid deep inheritance hierarchies
+
+8.8. DESIGN GUIDELINES
+----------------------
+• Inheritance for IS-A relationship
+• Composition for HAS-A relationship
+• Interface segregation (pure virtual)
+• Single Responsibility Principle
+
+8.9. QUICK REFERENCE
+--------------------
+┌───────────────────┬──────────┬─────────────┐
+│ FEATURE           │ BINDING  │ WHEN        │
+├───────────────────┼──────────┼─────────────┤
+│ Normal function   │ Static   │ Compile     │
+│ Virtual function  │ Dynamic  │ Runtime     │
+│ Operator          │ Static   │ Compile     │
+│ Virtual operator  │ Dynamic  │ Runtime     │
+│ Constructor       │ N/A      │ Object init │
+│ Destructor        │ Dynamic* │ Object del  │
+└───────────────────┴──────────┴─────────────┘
+* If virtual
+
+8.10. COMPILATION & TESTING
+----------------------------
+    // Compile với warnings
+    g++ -Wall -Wextra -std=c++17 file.cpp
+    
+    // Check vtable
+    g++ -fdump-class-hierarchy file.cpp
+    
+    // Memory check
+    valgrind --leak-check=full ./a.out
+    
+    // Runtime type info
+    g++ -frtti file.cpp
+
+================================================================================
+KẾT LUẬN
+================================================================================
+
+GIỮA KÌ TẬP TRUNG VÀO:
+✅ Inheritance (40%)
+✅ Constructor/Destructor Order (20%)
+✅ Operator Overloading (25%)
+✅ Virtual Functions (10%)
+✅ Static Members (5%)
+
+ĐIỂM THEN CHỐT CẦN NHỚ:
+1. Virtual destructor khi có inheritance
+2. Constructor order: Base → Member → Derived
+3. Destructor order: Ngược lại
+4. operator= PHẢI là member function
+5. Pass by reference để tránh slicing
+
+CÁC LỖI THƯỜNG GẶP:
+- Quên virtual destructor → Memory leak
+- Không gọi base constructor → Compile error
+- operator= là friend → Compile error
+- Pass by value → Slicing
+- Ambiguity trong multiple inheritance
+
+KẾT HỢP KIẾN THỨC:
+- Inheritance + Polymorphism
+- Operator overloading + Inheritance
+- Virtual functions + Dynamic binding
+- Static members + Inheritance
+
+LUYỆN TẬP:
+- Viết class hierarchy với virtual functions
+- Implement operators cho derived classes
+- Debug constructor/destructor order
+- Practice upcasting/downcasting
+
+BEST PRACTICES:
+- Virtual destructor cho base class
+- Override keyword cho virtual functions
+- Pass by reference/pointer
+- Self-assignment check trong operator=
+- Const correctness everywhere
+
+CHÚC BẠN ÔN TẬP TỐT VÀ ĐẠT ĐIỂM CAO! 🚀

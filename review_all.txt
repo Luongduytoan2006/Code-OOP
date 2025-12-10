@@ -1,0 +1,1759 @@
+================================================================================
+                    TÀI LIỆU ÔN TẬP OOP - TỔNG HỢP
+              C++ OBJECT-ORIENTED PROGRAMMING - COMPLETE GUIDE
+================================================================================
+
+                        TOÀN BỘ KIẾN THỨC OOP C++
+              Tổng hợp từ Test 1, Test 2, Giữa Kì, và Test 3
+
+================================================================================
+
+MỤC LỤC TỔNG QUAN
+=================
+PHẦN I: C++ FUNDAMENTALS (Test 1)
+    1. References & Pointers
+    2. sizeof Operator
+    3. Default Parameters
+    4. Pass By Value/Reference/Pointer
+    5. Type Conversion
+
+PHẦN II: OPERATOR OVERLOADING (Test 2)
+    6. Operator Overloading Basics
+    7. Member vs Friend Functions
+    8. Special Operators
+    9. Function Overloading
+    10. const-correctness
+
+PHẦN III: INHERITANCE & POLYMORPHISM (Giữa Kì + Test 3)
+    11. Single & Multiple Inheritance
+    12. Constructor/Destructor Order
+    13. Virtual Functions
+    14. Abstract Classes & Pure Virtual
+    15. Polymorphism & Dynamic Binding
+
+PHẦN IV: ADVANCED CONCEPTS (Test 3)
+    16. Templates (Function & Class)
+    17. Exception Handling
+    18. Copy Control & Rule of Three
+    19. Static Polymorphism
+    20. Design Patterns
+
+================================================================================
+                            PHẦN I: C++ FUNDAMENTALS
+================================================================================
+
+CHAPTER 1: REFERENCES & POINTERS
+=================================
+
+1.1. REFERENCES (THAM CHIẾU)
+----------------------------
+Reference là ALIAS của biến đã tồn tại.
+
+SYNTAX:
+    int x = 10;
+    int& ref = x;  // ref là bí danh của x
+    ref = 20;      // x cũng thành 20
+
+ĐẶC ĐIỂM:
+✓ PHẢI khởi tạo khi khai báo
+✓ KHÔNG THỂ re-bind (thay đổi target)
+✓ KHÔNG null reference
+
+1.2. POINTERS (CON TRỎ)
+-----------------------
+Pointer lưu địa chỉ của biến.
+
+SYNTAX:
+    int x = 10;
+    int* ptr = &x;  // ptr lưu địa chỉ x
+    *ptr = 20;      // Thay đổi x qua pointer
+
+ĐẶC ĐIỂM:
+✓ Có thể nullptr
+✓ Có thể thay đổi target
+✓ Pointer arithmetic
+
+1.3. SO SÁNH REFERENCE VS POINTER
+----------------------------------
+┌─────────────────┬──────────────┬───────────────┐
+│ ĐẶC ĐIỂM        │ REFERENCE    │ POINTER       │
+├─────────────────┼──────────────┼───────────────┤
+│ Khởi tạo        │ Bắt buộc     │ Không bắt buộc│
+│ Null            │ Không thể    │ Có thể        │
+│ Re-assign       │ Không thể    │ Có thể        │
+│ Syntax          │ Đơn giản     │ Phức tạp      │
+│ Overhead        │ Không        │ Có            │
+│ Use case        │ Parameters   │ Dynamic mem   │
+└─────────────────┴──────────────┴───────────────┘
+
+1.4. CONST REFERENCE
+--------------------
+    void print(const MyClass& obj);  // Không copy, không modify
+
+ƯU ĐIỂM:
+✓ Không copy (efficient)
+✓ Không modify (safe)
+✓ Có thể bind với temporary
+
+BEST PRACTICE:
+→ Dùng const reference cho read-only parameters lớn
+
+================================================================================
+
+CHAPTER 2: SIZEOF OPERATOR
+===========================
+
+2.1. CƠ BẢN
+-----------
+sizeof trả về kích thước (bytes) của type/variable.
+
+    sizeof(int)      // 4
+    sizeof(double)   // 8
+    sizeof(char)     // 1
+
+2.2. QUAN TRỌNG: SIZEOF KHÔNG CÓ SIDE EFFECTS
+----------------------------------------------
+    int x = 5;
+    sizeof(x++);  // x++ KHÔNG được thực hiện!
+    cout << x;    // 5 (không đổi)
+
+LÝ DO:
+- sizeof là compile-time operator
+- Chỉ tính size, không evaluate expression
+
+2.3. SIZEOF VỚI ARRAY
+---------------------
+    int arr[10];
+    sizeof(arr)           // 40 (10 * 4)
+    sizeof(arr) / sizeof(arr[0])  // 10 (length)
+
+CẢNH BÁO: ARRAY DECAY
+    void func(int arr[]) {
+        sizeof(arr);  // Size của POINTER, không phải array!
+    }
+
+2.4. SIZEOF VỚI CLASS
+---------------------
+    class Example {
+        char c;   // 1 byte
+        int i;    // 4 bytes
+        // Padding: 3 bytes
+    };
+    sizeof(Example) = 8  // Có alignment/padding
+
+2.5. EMPTY CLASS
+----------------
+    class Empty {};
+    sizeof(Empty) = 1  // Minimum 1 byte
+
+================================================================================
+
+CHAPTER 3: DEFAULT PARAMETERS
+==============================
+
+3.1. CÚ PHÁP
+------------
+    void func(int x, int y = 10, int z = 5);
+    
+    func(1);        // x=1, y=10, z=5
+    func(1, 2);     // x=1, y=2, z=5
+    func(1, 2, 3);  // x=1, y=2, z=3
+
+3.2. QUY TẮC VÀNG
+-----------------
+✓ Default parameters PHẢI ở CUỐI
+❌ void func(int x = 1, int y);     // SAI!
+✓ void func(int x, int y = 10);    // ĐÚNG
+
+✓ Chỉ khai báo default trong DECLARATION
+✓ Không thể bỏ qua parameter ở giữa
+
+3.3. VỚI FUNCTION OVERLOADING
+------------------------------
+CẢNH BÁO: AMBIGUITY
+    void func(int x);
+    void func(int x, int y = 10);
+    
+    func(5);  // COMPILE ERROR! Ambiguous
+
+GIẢI PHÁP:
+→ Tránh dùng default với overloaded functions
+
+================================================================================
+
+CHAPTER 4: PASS BY VALUE/REFERENCE/POINTER
+===========================================
+
+4.1. PASS BY VALUE
+------------------
+    void func(int x) { x = 10; }
+    
+    int a = 5;
+    func(a);
+    cout << a;  // 5 (không đổi)
+
+ĐẶC ĐIỂM:
+- Tạo COPY
+- Không ảnh hưởng biến gốc
+- COSTLY với objects lớn
+
+4.2. PASS BY REFERENCE
+----------------------
+    void func(int& x) { x = 10; }
+    
+    int a = 5;
+    func(a);
+    cout << a;  // 10 (đã đổi)
+
+ĐẶC ĐIỂM:
+- KHÔNG copy
+- Thay đổi biến gốc
+- Efficient
+
+4.3. PASS BY POINTER
+--------------------
+    void func(int* ptr) { *ptr = 10; }
+    
+    int a = 5;
+    func(&a);
+    cout << a;  // 10
+
+4.4. BẢNG QUYẾT ĐỊNH
+--------------------
+┌──────────────────┬─────────────────┐
+│ SCENARIO         │ RECOMMENDED     │
+├──────────────────┼─────────────────┤
+│ Small type       │ By value        │
+│ Large type       │ const reference │
+│ Need modify      │ Reference       │
+│ Optional         │ Pointer         │
+│ Array            │ Pointer + size  │
+└──────────────────┴─────────────────┘
+
+4.5. CONST REFERENCE PATTERN
+-----------------------------
+    void print(const MyClass& obj) {
+        // Read-only, no copy
+    }
+
+BEST PRACTICE:
+→ Const reference cho read-only parameters
+
+================================================================================
+
+CHAPTER 5: TYPE CONVERSION
+===========================
+
+5.1. IMPLICIT CONVERSION
+------------------------
+    int x = 5;
+    double y = x;  // int → double (widening)
+    
+    double z = 3.14;
+    int w = z;     // double → int (narrowing)
+
+5.2. TYPE PROMOTION
+-------------------
+    char c = 'A';  // ASCII 65
+    int result = c + 1;  // char → int, result = 66
+
+HIERARCHY:
+    char, short → int → long → long long → float → double
+
+5.3. EXPLICIT CAST
+------------------
+    double x = 3.14;
+    
+    // C-style
+    int y = (int)x;
+    
+    // C++ style
+    int z = static_cast<int>(x);
+
+5.4. CAST OPERATORS
+-------------------
+- static_cast: Compile-time conversion
+- dynamic_cast: Runtime type checking
+- const_cast: Remove const
+- reinterpret_cast: Low-level cast
+
+================================================================================
+                        PHẦN II: OPERATOR OVERLOADING
+================================================================================
+
+CHAPTER 6: OPERATOR OVERLOADING BASICS
+=======================================
+
+6.1. KHÁI NIỆM
+--------------
+Operator overloading định nghĩa lại toán tử cho user-defined types.
+
+    Complex c1(1, 2), c2(3, 4);
+    Complex c3 = c1 + c2;  // operator+ overloaded
+
+6.2. CÚ PHÁP: MEMBER FUNCTION
+------------------------------
+    class Complex {
+    public:
+        Complex operator+(const Complex& other) const {
+            return Complex(R + other.R, I + other.I);
+        }
+    };
+    
+    // c3 = c1 + c2;
+    // Tương đương: c3 = c1.operator+(c2);
+
+6.3. CÚ PHÁP: FRIEND FUNCTION
+------------------------------
+    class Complex {
+        friend Complex operator+(const Complex& a, const Complex& b) {
+            return Complex(a.R + b.R, a.I + b.I);
+        }
+    };
+    
+    // c3 = c1 + c2;
+    // Tương đương: c3 = operator+(c1, c2);
+
+6.4. MEMBER VS FRIEND
+---------------------
+┌──────────────┬──────────────┬────────────────┐
+│              │ Member       │ Friend         │
+├──────────────┼──────────────┼────────────────┤
+│ Tham số      │ 1 (right)    │ 2 (both sides) │
+│ this         │ Có           │ Không          │
+│ Symmetry     │ Hạn chế      │ Linh hoạt      │
+│ Use case     │ a op b       │ op(a, b)       │
+└──────────────┴──────────────┴────────────────┘
+
+================================================================================
+
+CHAPTER 7: MEMBER VS FRIEND FUNCTIONS
+======================================
+
+7.1. ARITHMETIC OPERATORS (+, -, *, /)
+---------------------------------------
+MEMBER FUNCTION:
+    Complex operator+(const Complex& obj) const {
+        return Complex(R + obj.R, I + obj.I);
+    }
+
+ĐẶC ĐIỂM:
+✓ Return by VALUE (new object)
+✓ CONST member function
+✓ Const reference parameter
+
+7.2. COMPOUND ASSIGNMENT (+=, -=, *=, /=)
+-----------------------------------------
+    Exam& operator+=(const Exam& obj) {
+        val += obj.val;
+        return *this;  // Return reference
+    }
+
+ĐẶC ĐIỂM:
+✓ Return REFERENCE (*this)
+✓ NON-CONST (thay đổi object)
+✓ Cho phép chain: a += b += c
+
+7.3. STREAM OPERATORS (<<, >>)
+-------------------------------
+PHẢI LÀ FRIEND:
+    class Exam {
+        friend ostream& operator<<(ostream& os, const Exam& obj) {
+            return os << obj.val;
+        }
+        
+        friend istream& operator>>(istream& is, Exam& obj) {
+            return is >> obj.val;
+        }
+    };
+
+TẠI SAO FRIEND?
+- Left operand là stream (ostream/istream)
+- Không thể làm member của Exam
+- Cần access private members
+
+7.4. SUBSCRIPT OPERATOR ([])
+----------------------------
+PHẢI LÀ MEMBER:
+    T& operator[](size_t index) {
+        return data[index];  // Return reference
+    }
+    
+    const T& operator[](size_t index) const {
+        return data[index];
+    }
+
+ĐẶC ĐIỂM:
+✓ Return REFERENCE (để gán được: arr[0] = 5)
+✓ 2 versions: const và non-const
+✓ MUST be member function
+
+7.5. FUNCTION CALL OPERATOR (())
+---------------------------------
+    class Functor {
+    public:
+        int operator()(int x) const {
+            return x * 2;
+        }
+    };
+    
+    Functor func;
+    cout << func(5);  // 10
+
+ỨNG DỤNG:
+- Function objects (functors)
+- STL algorithms
+- Callbacks
+
+7.6. ASSIGNMENT OPERATOR (=)
+----------------------------
+PHẢI LÀ MEMBER:
+    Exam& operator=(const Exam& other) {
+        if (this != &other) {  // Self-assignment check
+            val = other.val;
+        }
+        return *this;
+    }
+
+CHECKLIST:
+□ Self-assignment check
+□ Return *this by reference
+□ Deep copy cho pointers
+□ MUST be member function
+
+================================================================================
+
+CHAPTER 8: SPECIAL OPERATORS
+=============================
+
+8.1. NEW & DELETE OPERATORS
+----------------------------
+    class Base {
+    public:
+        void* operator new(size_t size) {
+            void* ptr = malloc(size);
+            if (!ptr) throw bad_alloc();
+            return ptr;
+        }
+        
+        void operator delete(void* ptr) {
+            free(ptr);
+        }
+    };
+
+ỨNG DỤNG:
+- Memory pool management
+- Debug memory leaks
+- Custom allocators
+
+8.2. CONVERSION OPERATORS
+--------------------------
+    class Exam {
+        int val;
+    public:
+        // Implicit conversion to int
+        operator int() const {
+            return val;
+        }
+        
+        // Implicit conversion to double
+        operator double() const {
+            return static_cast<double>(val);
+        }
+    };
+    
+    Exam e(10);
+    int x = e;      // Gọi operator int()
+    double y = e;   // Gọi operator double()
+
+8.3. COMPARISON OPERATORS
+--------------------------
+    bool operator==(const Exam& other) const {
+        return val == other.val;
+    }
+    
+    bool operator<(const Exam& other) const {
+        return val < other.val;
+    }
+    
+    // Implement các toán tử khác bằng == và <
+    bool operator!=(const Exam& other) const {
+        return !(*this == other);
+    }
+    
+    bool operator>(const Exam& other) const {
+        return other < *this;
+    }
+
+PATTERN:
+→ Implement == và <, derive các toán tử khác
+
+================================================================================
+
+CHAPTER 9: FUNCTION OVERLOADING
+================================
+
+9.1. CƠ BẢN
+-----------
+Function overloading: Nhiều hàm cùng tên, khác tham số.
+
+    int add(int a, int b);
+    double add(double a, double b);
+    int add(int a, int b, int c);
+
+9.2. OVERLOAD RESOLUTION
+------------------------
+Compiler chọn hàm theo:
+1. Exact match
+2. Type promotion (int → long)
+3. Type conversion (int → double)
+
+9.3. AMBIGUITY
+--------------
+    int Func(int a, int b);
+    int Func(int a, int b, int c = 6);
+    
+    Func(2, 4);  // ERROR! Ambiguous
+
+NGUYÊN NHÂN:
+- Default parameter tạo multiple matches
+- Compiler không biết chọn hàm nào
+
+GIẢI PHÁP:
+→ Tránh default parameters với overloaded functions
+
+9.4. BEST PRACTICES
+-------------------
+✓ Overload khi functions làm việc tương tự
+✓ Tránh ambiguity với default parameters
+✓ Dùng different parameter counts/types
+❌ Không overload chỉ dựa vào return type
+
+================================================================================
+
+CHAPTER 10: CONST-CORRECTNESS
+==============================
+
+10.1. CONST MEMBER FUNCTION
+----------------------------
+    class Exam {
+        int val;
+    public:
+        int getVal() const {  // Không thay đổi object
+            return val;
+        }
+        
+        void setVal(int v) {  // Thay đổi object
+            val = v;
+        }
+    };
+
+QUY TẮC:
+→ Hàm không thay đổi object → const member function
+
+10.2. CONST PARAMETERS
+----------------------
+    void print(const MyClass& obj) {
+        // obj không thể thay đổi
+    }
+
+ƯU ĐIỂM:
+✓ Không copy (efficient)
+✓ Không thay đổi (safe)
+✓ Self-documenting code
+
+10.3. CONST RETURN TYPE
+-----------------------
+    const MyClass& getMax(const MyClass& a, const MyClass& b) const {
+        return (a > b) ? a : b;
+    }
+
+10.4. CONST CORRECTNESS CHECKLIST
+----------------------------------
+□ Member function không đổi object? → const
+□ Parameter không đổi? → const reference
+□ Return reference không muốn đổi? → const reference
+□ Pointer không đổi target? → const pointer
+
+================================================================================
+
+BẢNG TỔNG HỢP OPERATOR OVERLOADING
+===================================
+┌─────────────────┬──────────┬────────────┬──────────┐
+│ OPERATOR        │ MEMBER?  │ RETURN     │ CONST?   │
+├─────────────────┼──────────┼────────────┼──────────┤
+│ +, -, *, /      │ M or F   │ By value   │ const    │
+│ +=, -=, *=, /=  │ Member   │ Reference  │ no       │
+│ ==, !=, <, >    │ M or F   │ bool       │ const    │
+│ <<, >>          │ Friend   │ stream&    │ const    │
+│ []              │ Member   │ Reference  │ 2 ver    │
+│ ()              │ Member   │ Any        │ Any      │
+│ =               │ Member   │ Reference  │ no       │
+│ new, delete     │ Static   │ void*      │ N/A      │
+│ Type conversion │ Member   │ Type       │ const    │
+└─────────────────┴──────────┴────────────┴──────────┘
+
+PHẢI LÀ MEMBER:
+- = (assignment)
+- [] (subscript)
+- () (function call)
+- -> (member access)
+
+NÊN LÀ FRIEND:
+- << và >> (stream operators)
+- Binary operators cần symmetry
+
+KHÔNG THỂ OVERLOAD:
+- . (member access)
+- .* (pointer to member)
+- :: (scope resolution)
+- ?: (ternary)
+- sizeof, typeid
+
+================================================================================
+                    PHẦN III: INHERITANCE & POLYMORPHISM
+================================================================================
+
+CHAPTER 11: SINGLE & MULTIPLE INHERITANCE
+==========================================
+
+11.1. SINGLE INHERITANCE
+------------------------
+    class Base {
+    protected:
+        int value;
+    public:
+        Base(int v) : value(v) {}
+        void show() { cout << value; }
+    };
+    
+    class Derived : public Base {
+    public:
+        Derived(int v) : Base(v) {}  // Gọi base constructor
+    };
+
+ĐẶC ĐIỂM:
+✓ Derived kế thừa TẤT CẢ members của Base
+✓ Access: public và protected (không phải private)
+✓ Có thể override methods
+
+11.2. MULTIPLE INHERITANCE
+---------------------------
+    class A {
+    protected:
+        int a;
+    public:
+        A(int x) : a(x) { cout << "A"; }
+        ~A() { cout << "~A"; }
+    };
+    
+    class B {
+    protected:
+        int b;
+    public:
+        B(int x) : b(x) { cout << "B"; }
+        ~B() { cout << "~B"; }
+    };
+    
+    class C : public A, public B {
+        int c;
+    public:
+        C(int x, int y, int z) : A(x), B(y), c(z) {
+            cout << "C";
+        }
+        ~C() { cout << "~C"; }
+    };
+    
+    int main() {
+        C obj(1, 2, 3);
+        // Constructor: ABC
+        // Destructor: ~C~B~A
+    }
+
+THỨ TỰ:
+- Constructor: Theo thứ tự khai báo (A, B, C)
+- Destructor: Ngược lại (~C, ~B, ~A)
+
+11.3. DIAMOND PROBLEM
+---------------------
+    class Base {
+    public:
+        int value;
+    };
+    
+    class A : public Base {};
+    class B : public Base {};
+    
+    class C : public A, public B {
+    public:
+        void func() {
+            // value;  // AMBIGUOUS!
+            A::value = 10;  // Phải chỉ định
+            B::value = 20;
+        }
+    };
+
+GIẢI PHÁP: VIRTUAL INHERITANCE
+    class A : virtual public Base {};
+    class B : virtual public Base {};
+    
+    class C : public A, public B {
+        // Chỉ có 1 copy của Base
+    };
+
+11.4. INHERITANCE ACCESS SPECIFIERS
+------------------------------------
+┌─────────────┬────────────┬───────────────┬─────────────┐
+│ Base Member │ public:    │ protected:    │ private:    │
+├─────────────┼────────────┼───────────────┼─────────────┤
+│ public      │ public     │ protected     │ private     │
+│ protected   │ protected  │ protected     │ private     │
+│ private     │ inaccessible│ inaccessible │ inaccessible│
+└─────────────┴────────────┴───────────────┴─────────────┘
+
+BEST PRACTICE:
+→ Dùng public inheritance cho IS-A relationship
+
+================================================================================
+
+CHAPTER 12: CONSTRUCTOR & DESTRUCTOR ORDER
+===========================================
+
+12.1. CONSTRUCTOR ORDER
+-----------------------
+THỨ TỰ THỰC HIỆN:
+1. Base class constructors (theo thứ tự khai báo)
+2. Member objects constructors (theo thứ tự khai báo)
+3. Derived class constructor body
+
+VÍ DỤ:
+    class Base {
+    public:
+        Base() { cout << "1.Base "; }
+    };
+    
+    class Member {
+    public:
+        Member() { cout << "2.Member "; }
+    };
+    
+    class Derived : public Base {
+        Member m;
+    public:
+        Derived() { cout << "3.Derived "; }
+    };
+    
+    int main() {
+        Derived d;
+        // Output: 1.Base 2.Member 3.Derived
+    }
+
+12.2. DESTRUCTOR ORDER
+----------------------
+THỨ TỰ THỰC HIỆN: NGƯỢC LẠI CONSTRUCTOR
+1. Derived class destructor body
+2. Member objects destructors (reverse order)
+3. Base class destructors (reverse order)
+
+VÍ DỤ:
+    int main() {
+        Derived d;
+        // Destructor: ~Derived ~Member ~Base
+    }
+
+12.3. VIRTUAL DESTRUCTOR
+------------------------
+QUY TẮC VÀNG:
+    class Base {
+    public:
+        virtual ~Base() { cout << "~Base"; }
+    };
+    
+    class Derived : public Base {
+    public:
+        ~Derived() { cout << "~Derived"; }
+    };
+    
+    int main() {
+        Base* ptr = new Derived;
+        delete ptr;
+        // Với virtual: ~Derived~Base (CORRECT!)
+        // Không virtual: ~Base only (MEMORY LEAK!)
+    }
+
+KHI NÀO CẦN VIRTUAL DESTRUCTOR?
+✓ Class có virtual functions
+✓ Class được dùng làm base class
+✓ Delete qua base pointer
+
+12.4. MEMBER INITIALIZATION LIST
+---------------------------------
+    class Derived : public Base {
+        int x;
+        const int y;
+        Member& ref;
+    public:
+        Derived(int a, int b, Member& m) 
+            : Base(a),  // 1. Base constructor
+              y(b),      // 2. const member
+              ref(m),    // 3. reference member
+              x(0)       // 4. normal member
+        {
+            // Constructor body
+        }
+    };
+
+THỨ TỰ KHỞI TẠO:
+- Theo thứ tự khai báo trong class (KHÔNG theo init list)
+
+PHẢI DÙNG INIT LIST:
+✓ Base class constructor
+✓ const members
+✓ Reference members
+✓ Member objects không có default constructor
+
+================================================================================
+
+CHAPTER 13: VIRTUAL FUNCTIONS
+==============================
+
+13.1. KHÁI NIỆM
+---------------
+Virtual function cho phép override trong derived class.
+
+    class Animal {
+    public:
+        virtual void sound() {
+            cout << "Animal sound";
+        }
+        virtual ~Animal() {}
+    };
+    
+    class Dog : public Animal {
+    public:
+        void sound() override {  // Override
+            cout << "Woof";
+        }
+    };
+    
+    int main() {
+        Animal* ptr = new Dog;
+        ptr->sound();  // "Woof" (dynamic binding)
+        delete ptr;
+    }
+
+13.2. DYNAMIC BINDING
+---------------------
+    Animal* animal = new Dog;
+    animal->sound();  // Calls Dog::sound() (runtime)
+
+STATIC BINDING (không virtual):
+    Animal* animal = new Dog;
+    animal->sound();  // Calls Animal::sound() (compile-time)
+
+13.3. OVERRIDE KEYWORD
+----------------------
+    class Derived : public Base {
+    public:
+        void func() override {  // Compiler check
+            // Must override Base::func()
+        }
+    };
+
+ƯU ĐIỂM:
+✓ Compile-time check
+✓ Catch typos
+✓ Self-documenting
+
+13.4. FINAL KEYWORD
+-------------------
+    class Base {
+    public:
+        virtual void func() final {
+            // Không thể override
+        }
+    };
+    
+    class Derived final : public Base {
+        // Không thể inherit từ Derived
+    };
+
+13.5. VIRTUAL FUNCTION TABLE (VTABLE)
+--------------------------------------
+CƠ CHẾ:
+1. Compiler tạo vtable cho class có virtual functions
+2. Mỗi object có vptr trỏ đến vtable
+3. Virtual function call → lookup trong vtable
+
+OVERHEAD:
+- Memory: vptr (4/8 bytes per object)
+- Performance: Indirect call (nhỏ)
+
+DIAGRAM:
+    Object: | vptr | data |
+              ↓
+    vtable: | &func1 | &func2 | ...
+
+================================================================================
+
+CHAPTER 14: ABSTRACT CLASSES & PURE VIRTUAL
+============================================
+
+14.1. PURE VIRTUAL FUNCTION
+----------------------------
+    class Shape {
+    public:
+        virtual double area() = 0;  // Pure virtual
+        virtual void draw() = 0;
+        virtual ~Shape() {}
+    };
+
+ĐẶC ĐIỂM:
+- Không có implementation
+- Class có pure virtual → abstract class
+- Không thể tạo object
+
+14.2. ABSTRACT CLASS
+--------------------
+    class Shape {
+    public:
+        virtual double area() = 0;
+        virtual ~Shape() {}
+    };
+    
+    // Shape s;  // ERROR! Abstract class
+    
+    class Circle : public Shape {
+        double radius;
+    public:
+        double area() override {
+            return 3.14 * radius * radius;
+        }
+    };
+    
+    Shape* ptr = new Circle();  // OK
+
+14.3. INTERFACE PATTERN
+-----------------------
+    class IDrawable {
+    public:
+        virtual void draw() = 0;
+        virtual ~IDrawable() {}
+    };
+    
+    class IResizable {
+    public:
+        virtual void resize(double factor) = 0;
+        virtual ~IResizable() {}
+    };
+    
+    class Shape : public IDrawable, public IResizable {
+    public:
+        void draw() override { /*...*/ }
+        void resize(double factor) override { /*...*/ }
+    };
+
+BEST PRACTICE:
+→ Dùng abstract class làm interface
+
+14.4. CONCRETE CLASS
+--------------------
+Concrete class: Class có implementation cho TẤT CẢ functions.
+
+    class Circle : public Shape {
+    public:
+        double area() override {
+            return 3.14 * r * r;  // Implementation
+        }
+    };
+
+================================================================================
+
+CHAPTER 15: POLYMORPHISM & DYNAMIC BINDING
+===========================================
+
+15.1. COMPILE-TIME POLYMORPHISM (STATIC)
+-----------------------------------------
+- Function overloading
+- Operator overloading
+- Templates
+
+VÍ DỤ:
+    void print(int x);
+    void print(double x);
+    void print(string s);
+    
+    print(10);      // Compile-time resolution
+
+15.2. RUNTIME POLYMORPHISM (DYNAMIC)
+-------------------------------------
+- Virtual functions
+- Inheritance
+
+VÍ DỤ:
+    Animal* animal = new Dog;
+    animal->sound();  // Runtime resolution
+
+15.3. UPCASTING & DOWNCASTING
+------------------------------
+UPCASTING (an toàn, tự động):
+    Derived d;
+    Base* basePtr = &d;  // Derived* → Base*
+
+DOWNCASTING (cần cẩn thận):
+    Base* bPtr = new Derived;
+    Derived* dPtr = dynamic_cast<Derived*>(bPtr);
+    if (dPtr) {
+        // Safe downcasting
+    }
+
+15.4. SLICING PROBLEM
+---------------------
+    class Base {
+    public:
+        int x;
+    };
+    
+    class Derived : public Base {
+    public:
+        int y;
+    };
+    
+    void func(Base obj) {  // Pass by value
+        // y bị mất (slicing)
+    }
+    
+    int main() {
+        Derived d;
+        func(d);  // SLICING!
+    }
+
+GIẢI PHÁP:
+    void func(Base& obj) {  // Pass by reference
+        // Polymorphism works!
+    }
+
+15.5. LISKOV SUBSTITUTION PRINCIPLE
+------------------------------------
+Derived class phải có thể thay thế Base class mà không làm sai logic.
+
+VÍ DỤ:
+    void processAnimal(Animal& animal) {
+        animal.sound();
+        animal.eat();
+    }
+    
+    Dog dog;
+    Cat cat;
+    processAnimal(dog);  // Works
+    processAnimal(cat);  // Works
+
+================================================================================
+                        PHẦN IV: ADVANCED CONCEPTS
+================================================================================
+
+CHAPTER 16: TEMPLATES
+=====================
+
+16.1. FUNCTION TEMPLATES
+------------------------
+    template<typename T>
+    T max(T a, T b) {
+        return (a > b) ? a : b;
+    }
+    
+    int main() {
+        cout << max(10, 20);        // max<int>
+        cout << max(3.14, 2.71);    // max<double>
+        cout << max<int>(10, 20);   // Explicit
+    }
+
+16.2. CLASS TEMPLATES
+---------------------
+    template<typename T>
+    class Stack {
+        T data[100];
+        int top;
+    public:
+        Stack() : top(-1) {}
+        
+        void push(const T& item) {
+            data[++top] = item;
+        }
+        
+        T pop() {
+            return data[top--];
+        }
+    };
+    
+    int main() {
+        Stack<int> intStack;
+        Stack<string> strStack;
+    }
+
+16.3. TEMPLATE SPECIALIZATION
+------------------------------
+    // General template
+    template<typename T>
+    class MyClass {
+    public:
+        void func() { cout << "General"; }
+    };
+    
+    // Specialization for int
+    template<>
+    class MyClass<int> {
+    public:
+        void func() { cout << "Specialized for int"; }
+    };
+
+16.4. NON-TYPE TEMPLATE PARAMETERS
+-----------------------------------
+    template<typename T, int SIZE>
+    class Array {
+        T data[SIZE];
+    public:
+        int size() const { return SIZE; }
+    };
+    
+    Array<int, 10> arr1;
+    Array<double, 20> arr2;
+
+16.5. VARIADIC TEMPLATES
+-------------------------
+    template<typename... Args>
+    void print(Args... args) {
+        (cout << ... << args) << endl;
+    }
+    
+    print(1, 2.5, "hello");  // 12.5hello
+
+16.6. TEMPLATE VS INHERITANCE
+------------------------------
+┌──────────────────┬──────────────┬────────────────┐
+│                  │ Template     │ Inheritance    │
+├──────────────────┼──────────────┼────────────────┤
+│ Binding          │ Compile-time │ Runtime        │
+│ Code generation  │ Many copies  │ One copy       │
+│ Performance      │ Faster       │ Slower (vtable)│
+│ Binary size      │ Larger       │ Smaller        │
+│ Flexibility      │ Type-safe    │ Polymorphic    │
+└──────────────────┴──────────────┴────────────────┘
+
+================================================================================
+
+CHAPTER 17: EXCEPTION HANDLING
+===============================
+
+17.1. CƠ BẢN
+------------
+    try {
+        // Code có thể throw exception
+        if (error) {
+            throw runtime_error("Error message");
+        }
+    }
+    catch (const runtime_error& e) {
+        cout << "Caught: " << e.what();
+    }
+    catch (...) {
+        cout << "Unknown exception";
+    }
+
+17.2. EXCEPTION HIERARCHY
+-------------------------
+    exception
+    ├── logic_error
+    │   ├── invalid_argument
+    │   ├── out_of_range
+    │   └── length_error
+    └── runtime_error
+        ├── overflow_error
+        ├── underflow_error
+        └── range_error
+
+17.3. THROW SPECIFICATIONS
+--------------------------
+    void func() noexcept {
+        // Không throw exception
+    }
+    
+    void func() {
+        // Có thể throw bất kỳ exception
+    }
+
+17.4. RETHROW
+-------------
+    try {
+        // Code
+    }
+    catch (const exception& e) {
+        cout << "Handling: " << e.what();
+        throw;  // Rethrow cùng exception
+    }
+
+17.5. EXCEPTION SAFETY
+----------------------
+LEVELS:
+1. No guarantee: Có thể corrupt state
+2. Basic guarantee: No leaks, valid state
+3. Strong guarantee: Commit or rollback
+4. No-throw guarantee: Never throws
+
+RAII PATTERN:
+    class Resource {
+        int* data;
+    public:
+        Resource() : data(new int[100]) {}
+        ~Resource() { delete[] data; }
+        // Destructor tự động giải phóng
+    };
+
+17.6. CATCH ORDER
+-----------------
+    try {
+        // Code
+    }
+    catch (const DerivedError& e) {
+        // Phải catch derived trước
+    }
+    catch (const BaseError& e) {
+        // Base sau
+    }
+    catch (...) {
+        // Catch-all cuối cùng
+    }
+
+================================================================================
+
+CHAPTER 18: COPY CONTROL & RULE OF THREE
+=========================================
+
+18.1. RULE OF THREE
+-------------------
+Nếu class cần 1 trong 3 → cần CẢ 3:
+1. Destructor
+2. Copy constructor
+3. Copy assignment operator
+
+VÍ DỤ:
+    class String {
+        char* data;
+    public:
+        // 1. Destructor
+        ~String() {
+            delete[] data;
+        }
+        
+        // 2. Copy constructor
+        String(const String& other) {
+            data = new char[strlen(other.data) + 1];
+            strcpy(data, other.data);
+        }
+        
+        // 3. Copy assignment
+        String& operator=(const String& other) {
+            if (this != &other) {
+                delete[] data;
+                data = new char[strlen(other.data) + 1];
+                strcpy(data, other.data);
+            }
+            return *this;
+        }
+    };
+
+18.2. RULE OF FIVE (C++11)
+--------------------------
+Thêm 2 thành viên nữa:
+4. Move constructor
+5. Move assignment operator
+
+    class String {
+    public:
+        // 4. Move constructor
+        String(String&& other) noexcept {
+            data = other.data;
+            other.data = nullptr;
+        }
+        
+        // 5. Move assignment
+        String& operator=(String&& other) noexcept {
+            if (this != &other) {
+                delete[] data;
+                data = other.data;
+                other.data = nullptr;
+            }
+            return *this;
+        }
+    };
+
+18.3. DEEP COPY VS SHALLOW COPY
+--------------------------------
+SHALLOW COPY (default):
+    class String {
+        char* data;
+    };
+    
+    String s1;
+    String s2 = s1;  // Copy pointer → DANGEROUS!
+    // Cả 2 trỏ cùng memory
+
+DEEP COPY:
+    String(const String& other) {
+        data = new char[...];  // Allocate new memory
+        strcpy(data, other.data);  // Copy data
+    }
+
+18.4. COPY-AND-SWAP IDIOM
+--------------------------
+    class String {
+    public:
+        friend void swap(String& a, String& b) {
+            using std::swap;
+            swap(a.data, b.data);
+        }
+        
+        String& operator=(String other) {  // Pass by value
+            swap(*this, other);
+            return *this;
+        }
+    };
+
+ƯU ĐIỂM:
+✓ Exception-safe
+✓ Self-assignment safe
+✓ Code reuse
+
+18.5. RULE OF ZERO
+------------------
+Best practice: Dùng smart pointers, không cần define special members.
+
+    class String {
+        unique_ptr<char[]> data;
+    public:
+        // Không cần destructor, copy constructor, etc.
+        // Compiler tự generate hoặc delete
+    };
+
+================================================================================
+
+CHAPTER 19: STATIC POLYMORPHISM
+================================
+
+19.1. CRTP (Curiously Recurring Template Pattern)
+--------------------------------------------------
+    template<typename Derived>
+    class Base {
+    public:
+        void interface() {
+            static_cast<Derived*>(this)->implementation();
+        }
+    };
+    
+    class Derived : public Base<Derived> {
+    public:
+        void implementation() {
+            cout << "Derived implementation";
+        }
+    };
+
+SO SÁNH:
+- Dynamic polymorphism: Virtual functions (runtime)
+- Static polymorphism: Templates (compile-time)
+
+┌──────────────┬─────────────┬─────────────────┐
+│              │ Virtual     │ CRTP            │
+├──────────────┼─────────────┼─────────────────┤
+│ Binding      │ Runtime     │ Compile-time    │
+│ Overhead     │ Vtable      │ None            │
+│ Performance  │ Slower      │ Faster          │
+│ Flexibility  │ High        │ Low             │
+└──────────────┴─────────────┴─────────────────┘
+
+19.2. FUNCTION OBJECTS (FUNCTORS)
+----------------------------------
+    struct Comparator {
+        bool operator()(int a, int b) const {
+            return a < b;
+        }
+    };
+    
+    vector<int> v = {3, 1, 4, 1, 5};
+    sort(v.begin(), v.end(), Comparator());
+
+ƯU ĐIỂM:
+✓ Inline (fast)
+✓ State (có members)
+✓ Type-safe
+
+19.3. POLICY-BASED DESIGN
+--------------------------
+    template<typename SortPolicy>
+    class DataProcessor {
+    public:
+        void process(vector<int>& data) {
+            SortPolicy::sort(data);
+        }
+    };
+    
+    struct QuickSortPolicy {
+        static void sort(vector<int>& data) {
+            // Quick sort
+        }
+    };
+
+================================================================================
+
+CHAPTER 20: DESIGN PATTERNS
+============================
+
+20.1. SINGLETON PATTERN
+-----------------------
+    class Singleton {
+        static Singleton* instance;
+        Singleton() {}  // Private constructor
+    public:
+        static Singleton* getInstance() {
+            if (!instance) {
+                instance = new Singleton();
+            }
+            return instance;
+        }
+    };
+
+20.2. FACTORY PATTERN
+---------------------
+    class Shape {
+    public:
+        virtual void draw() = 0;
+        virtual ~Shape() {}
+    };
+    
+    class ShapeFactory {
+    public:
+        static Shape* create(string type) {
+            if (type == "circle") return new Circle();
+            if (type == "square") return new Square();
+            return nullptr;
+        }
+    };
+
+20.3. OBSERVER PATTERN
+----------------------
+    class Observer {
+    public:
+        virtual void update() = 0;
+    };
+    
+    class Subject {
+        vector<Observer*> observers;
+    public:
+        void attach(Observer* obs) {
+            observers.push_back(obs);
+        }
+        
+        void notify() {
+            for (auto obs : observers) {
+                obs->update();
+            }
+        }
+    };
+
+20.4. STRATEGY PATTERN
+----------------------
+    class SortStrategy {
+    public:
+        virtual void sort(vector<int>& data) = 0;
+        virtual ~SortStrategy() {}
+    };
+    
+    class QuickSort : public SortStrategy {
+        void sort(vector<int>& data) override {
+            // Quick sort implementation
+        }
+    };
+    
+    class Context {
+        SortStrategy* strategy;
+    public:
+        void setStrategy(SortStrategy* s) {
+            strategy = s;
+        }
+        
+        void execute(vector<int>& data) {
+            strategy->sort(data);
+        }
+    };
+
+================================================================================
+                            TỔNG KẾT & BEST PRACTICES
+================================================================================
+
+1. C++ FUNDAMENTALS
+===================
+✓ Prefer references over pointers (trừ khi cần nullptr)
+✓ Use const reference for read-only parameters
+✓ sizeof không có side effects
+✓ Default parameters phải ở cuối
+✓ Pass by reference cho objects lớn
+
+2. OPERATOR OVERLOADING
+========================
+✓ operator= phải là member function
+✓ operator<< phải là friend function
+✓ Return reference từ +=, -=, *= (cho chain)
+✓ Return value từ +, -, * (tạo object mới)
+✓ Self-assignment check trong operator=
+✓ Const correctness everywhere
+
+3. INHERITANCE
+==============
+✓ Virtual destructor cho base class
+✓ Gọi base constructor trong initialization list
+✓ Override keyword cho virtual functions
+✓ Pass by reference để tránh slicing
+✓ Prefer composition over inheritance
+
+4. POLYMORPHISM
+===============
+✓ Virtual functions cho dynamic binding
+✓ Pure virtual cho abstract class/interface
+✓ dynamic_cast cho safe downcasting
+✓ Avoid deep inheritance hierarchies
+
+5. TEMPLATES
+============
+✓ Templates cho compile-time polymorphism
+✓ Specialization cho special cases
+✓ Prefer templates over macros
+✓ Consider compilation time
+
+6. EXCEPTION HANDLING
+======================
+✓ Throw by value, catch by const reference
+✓ Catch specific exceptions trước
+✓ RAII cho resource management
+✓ noexcept cho functions không throw
+
+7. MEMORY MANAGEMENT
+====================
+✓ Rule of Three/Five/Zero
+✓ Use smart pointers (unique_ptr, shared_ptr)
+✓ RAII pattern
+✓ Avoid manual new/delete
+✓ nullptr check trước dereference
+
+8. CODE QUALITY
+===============
+✓ const correctness
+✓ Self-documenting code
+✓ SOLID principles
+✓ DRY (Don't Repeat Yourself)
+✓ KISS (Keep It Simple, Stupid)
+
+================================================================================
+                            COMPILATION & DEBUGGING
+================================================================================
+
+COMPILATION FLAGS:
+------------------
+    # Warnings
+    g++ -Wall -Wextra -Werror file.cpp
+    
+    # Optimization
+    g++ -O2 file.cpp
+    
+    # Debug
+    g++ -g file.cpp
+    
+    # C++ standard
+    g++ -std=c++17 file.cpp
+    
+    # All combined
+    g++ -Wall -Wextra -std=c++17 -O2 file.cpp -o program
+
+DEBUGGING TOOLS:
+----------------
+    # GDB
+    gdb ./program
+    
+    # Valgrind (memory check)
+    valgrind --leak-check=full ./program
+    
+    # AddressSanitizer
+    g++ -fsanitize=address file.cpp
+    
+    # UndefinedBehaviorSanitizer
+    g++ -fsanitize=undefined file.cpp
+
+================================================================================
+                            CHECKLIST TỔNG HỢP
+================================================================================
+
+BEFORE COMPILE:
+□ Include guards trong headers?
+□ Forward declarations đúng?
+□ Template definitions trong headers?
+□ Const correctness?
+
+CLASS DESIGN:
+□ Virtual destructor nếu có virtual functions?
+□ Rule of Three/Five/Zero?
+□ Copy constructor với deep copy?
+□ Self-assignment check trong operator=?
+□ Const member functions?
+
+INHERITANCE:
+□ Gọi base constructor?
+□ Virtual destructor?
+□ Override keyword?
+□ Avoid slicing?
+
+MEMORY:
+□ new → delete, new[] → delete[]?
+□ No memory leaks?
+□ No dangling pointers?
+□ nullptr checks?
+
+PERFORMANCE:
+□ Pass by reference cho large objects?
+□ Const reference cho read-only?
+□ Move semantics cho transfers?
+□ Reserve vector capacity?
+
+================================================================================
+                            COMMON MISTAKES
+================================================================================
+
+1. ❌ Quên virtual destructor
+   ✓ Always virtual destructor cho base class
+
+2. ❌ Array decay trong sizeof
+   ✓ Truyền size như tham số
+
+3. ❌ sizeof với side effects
+   ✓ sizeof không evaluate expression
+
+4. ❌ operator= là friend
+   ✓ operator= PHẢI là member
+
+5. ❌ Pass by value gây slicing
+   ✓ Pass by reference/pointer
+
+6. ❌ Dangling reference/pointer
+   ✓ Không return reference đến local
+
+7. ❌ Self-assignment không check
+   ✓ if (this != &other)
+
+8. ❌ Shallow copy với pointers
+   ✓ Deep copy trong copy constructor
+
+9. ❌ Không gọi base constructor
+   ✓ Initialization list: Base(args)
+
+10. ❌ Exception safety
+    ✓ RAII pattern
+
+================================================================================
+                            QUICK REFERENCE
+================================================================================
+
+MEMBER FUNCTION:
+    ReturnType functionName(params) const {
+        return value;
+    }
+
+CONSTRUCTOR:
+    ClassName(params) : member1(val1), member2(val2) {
+        // Body
+    }
+
+DESTRUCTOR:
+    virtual ~ClassName() {
+        // Cleanup
+    }
+
+COPY CONSTRUCTOR:
+    ClassName(const ClassName& other) {
+        // Deep copy
+    }
+
+COPY ASSIGNMENT:
+    ClassName& operator=(const ClassName& other) {
+        if (this != &other) {
+            // Copy
+        }
+        return *this;
+    }
+
+OPERATOR OVERLOAD (MEMBER):
+    ReturnType operator+(const ClassName& other) const {
+        return ClassName(/*...*/);
+    }
+
+OPERATOR OVERLOAD (FRIEND):
+    friend ostream& operator<<(ostream& os, const ClassName& obj) {
+        return os << obj.member;
+    }
+
+INHERITANCE:
+    class Derived : public Base {
+    public:
+        Derived(params) : Base(baseParams) {
+            // Body
+        }
+    };
+
+VIRTUAL FUNCTION:
+    virtual ReturnType functionName() override {
+        // Implementation
+    }
+
+TEMPLATE:
+    template<typename T>
+    class ClassName {
+        T member;
+    };
+
+================================================================================
+                            KẾT LUẬN
+================================================================================
+
+Tài liệu này tổng hợp TOÀN BỘ kiến thức OOP C++ từ:
+✅ Test 1: C++ Fundamentals
+✅ Test 2: Operator Overloading
+✅ Giữa Kì: Inheritance + Operators
+✅ Test 3: Polymorphism + Templates + Exceptions
+
+ĐIỂM THEN CHỐT:
+1. References & Pointers - Khác biệt và khi nào dùng
+2. sizeof operator - Không có side effects
+3. Operator Overloading - Member vs Friend
+4. Inheritance - Constructor/Destructor order
+5. Virtual Functions - Dynamic binding
+6. Templates - Compile-time polymorphism
+7. Exception Handling - RAII pattern
+8. Copy Control - Rule of Three/Five/Zero
+
+LUYỆN TẬP:
+- Viết class với đầy đủ special members
+- Implement operators cho custom types
+- Practice inheritance hierarchies
+- Template programming
+- Exception-safe code
+
+BEST PRACTICES:
+- Const correctness
+- RAII for resources
+- Virtual destructor
+- Pass by reference
+- Smart pointers
+- Override keyword
+- Rule of Zero when possible
+
+CHÚC BẠN ÔN TẬP TỐT VÀ ĐẠT ĐIỂM CAO TRONG TẤT CẢ CÁC BÀI THI! 🚀🎯
+
+================================================================================
+                            HẾT
+================================================================================
